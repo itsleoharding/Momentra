@@ -1,0 +1,5341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Carbon Consulting - Scaling Diagnostic</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Slab:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { height: 100%; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #0A0B0D;
+      background: radial-gradient(ellipse at 50% 0%, #10141A 0%, #0A0B0D 55%);
+      color: #EEEEED;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       INTRO SCREEN
+    ══════════════════════════════════════════════════════════════ */
+
+    #intro-screen {
+      position: fixed;
+      inset: 0;
+      background: #111214;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      perspective: 1000px;
+      overflow: visible;
+    }
+
+    .echo-symbol { pointer-events: none; position: absolute; }
+
+    #intro-echo {
+      width: 280px; height: 280px;
+      z-index: 0;
+      overflow: visible;
+    }
+    #intro-echo path {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .intro-wordmark-group {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+
+    /* Echo arc expansion — triggered by .transitioning on #intro-screen */
+    #intro-screen.transitioning #intro-echo path:nth-child(1) {
+      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0s forwards;
+    }
+    #intro-screen.transitioning #intro-echo path:nth-child(2) {
+      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0.08s forwards;
+    }
+    #intro-screen.transitioning #intro-echo path:nth-child(3) {
+      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0.16s forwards;
+    }
+    #intro-screen.transitioning #intro-echo path:nth-child(4) {
+      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0.24s forwards;
+    }
+    @keyframes arcExpand {
+      0%   { transform: scale(1); opacity: 1; }
+      60%  { opacity: 0.8; }
+      100% { transform: scale(12); opacity: 0; }
+    }
+
+    /* Wordmark lift and dissolve — triggered by .transitioning */
+    #intro-screen.transitioning .intro-wordmark-group {
+      animation: wordmarkExit 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+    }
+    @keyframes wordmarkExit {
+      0%   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+      100% { opacity: 0; transform: translateY(-30px) scale(0.95); filter: blur(6px); }
+    }
+
+    /* Splash background fade — triggered by .transitioning */
+    #intro-screen.transitioning {
+      animation: splashFade 0.6s ease 1.4s forwards;
+    }
+    @keyframes splashFade {
+      to { opacity: 0; pointer-events: none; }
+    }
+
+
+    .intro-line {
+      width: 0;
+      height: 1px;
+      background: #A5E22C;
+      animation: introLineExpand 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+    }
+
+    @keyframes introLineExpand {
+      from { width: 0; }
+      to   { width: 180px; }
+    }
+
+    #intro-text {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: #EEEEED;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: scale(0.85) translateZ(-50px);
+      transition: opacity 1.8s cubic-bezier(0.25, 0.1, 0.25, 1.0),
+                  transform 1.8s cubic-bezier(0.25, 0.1, 0.25, 1.0);
+    }
+
+    #intro-text.intro-visible {
+      opacity: 1;
+      transform: scale(1) translateZ(0);
+    }
+
+    .intro-line-bottom {
+      width: 0;
+      height: 1px;
+      background: #A5E22C;
+      animation: introLineExpand 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.8s forwards;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       UNIFIED CROSSFADE TRANSITION
+    ══════════════════════════════════════════════════════════════ */
+
+    .transition-fade-out {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .transition-fade-in {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s !important;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       LANDING PAGE
+    ══════════════════════════════════════════════════════════════ */
+
+    #landing {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      z-index: 2;
+      background: #0A0B0D;
+      background: radial-gradient(ellipse at 50% 0%, #10141A 0%, #0A0B0D 55%);
+    }
+
+    /* Welcome page exit — added on CTA click */
+    .welcome-exit {
+      opacity: 0 !important;
+      transform: scale(0.97) !important;
+      filter: blur(4px) !important;
+      pointer-events: none !important;
+      transition:
+        opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .landing-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Fly-in base state ── */
+
+    .fly-in {
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 1.2s cubic-bezier(0.25, 0.1, 0.25, 1.0),
+                  transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1.0);
+    }
+
+    .fly-in.from-top {
+      transform: translateY(-12px);
+    }
+
+    .fly-in.revealed {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* ── Content area ── */
+
+    .landing-content {
+      max-width: 720px;
+      width: 100%;
+      padding: 0 24px 0;
+      margin-bottom: 6vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 32px;
+    }
+
+    .landing-eyebrow {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .landing-eyebrow::before,
+    .landing-eyebrow::after {
+      content: '';
+      display: block;
+      flex: 1;
+      height: 1px;
+      background: #444;
+    }
+
+    .landing-headline {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 800;
+      font-size: clamp(32px, 4.5vw, 46px);
+      line-height: 1.12;
+      color: #FFFFFF;
+      letter-spacing: -0.025em;
+    }
+
+    .landing-headline em {
+      font-style: normal;
+      color: #A5E22C;
+    }
+
+    .landing-subheadline {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      font-size: 17px;
+      line-height: 1.7;
+      color: #FFFFFF;
+      max-width: 520px;
+    }
+
+    /* ── Page text images (replace live text on landing + post-diag) ── */
+
+    .page-text-image {
+      display: block;
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    /* ── Video placeholder ── */
+
+    .video-placeholder {
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 16 / 9;
+      background: #111316;
+      border: 2px solid #A5E22C;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .video-placeholder iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .video-play-icon {
+      width: 52px;
+      height: 52px;
+      border: 1px solid #282D32;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .video-play-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: #3E3E44;
+      margin-left: 3px;
+    }
+
+    .video-placeholder-text {
+      font-family: 'Roboto', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #3E3E44;
+    }
+
+    /* ── CTA ── */
+
+    .cta-button {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #000;
+      background: linear-gradient(135deg, #ACEA30 0%, #8EC420 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 18px 56px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 24px rgba(165, 226, 44, 0.18), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .cta-button:hover {
+      background: linear-gradient(135deg, #BEFA3D 0%, #9CD428 100%);
+      box-shadow: 0 8px 40px rgba(165, 226, 44, 0.38), inset 0 1px 0 rgba(255,255,255,0.15);
+      transform: translateY(-1px);
+    }
+
+    .cta-button:active {
+      transform: scale(0.98) translateY(0);
+    }
+
+    .cta-support-text {
+      font-family: 'Roboto', sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #3E3E44;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       WIDGET WRAPPER
+    ══════════════════════════════════════════════════════════════ */
+
+    /* Step 1 & 2: Widget 1 — always rendered, invisible underneath landing */
+    #widget-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      padding: 40px 16px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      z-index: 1;
+      opacity: 0;
+      transform: scale(0.97);
+      filter: blur(4px);
+      pointer-events: none;
+    }
+
+    /* Widget 1 entrance — added on CTA click */
+    .widget1-enter {
+      opacity: 1 !important;
+      transform: scale(1) !important;
+      filter: blur(0px) !important;
+      pointer-events: auto !important;
+      transition:
+        opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s,
+        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s,
+        filter 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s;
+    }
+
+    .widget-card {
+      max-width: 600px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── Progress bar ── */
+
+    .progress-bar-wrap {
+      margin-bottom: 28px;
+      transition: opacity 0.5s ease, max-height 0.5s ease, margin 0.5s ease;
+      max-height: 40px;
+      overflow: visible;
+    }
+
+    .progress-bar-wrap.hidden {
+      opacity: 0;
+      max-height: 0;
+      margin-bottom: 0;
+      pointer-events: none;
+    }
+
+    .progress-segments {
+      display: flex;
+      gap: 5px;
+      height: 3px;
+    }
+
+    .progress-seg {
+      flex: 1;
+      position: relative;
+      background: #1A1D22;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-seg-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #7ECE2A, #A5E22C, #C2F04C);
+      background-size: 200% 100%;
+      box-shadow: 0 0 8px rgba(165, 226, 44, 0.5), 0 0 18px rgba(165, 226, 44, 0.12);
+      transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .progress-seg-fill.complete {
+      width: 100% !important;
+      background: #3D4249;
+      box-shadow: none;
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s 0.3s ease, box-shadow 0.4s 0.3s ease;
+    }
+
+    .progress-seg-fill.active::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.8s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .progress-seg-fill.pulse {
+      animation: segPulse 0.5s ease-out;
+    }
+
+    @keyframes segPulse {
+      0% { box-shadow: 0 0 8px rgba(165,226,44,0.5), 0 0 18px rgba(165,226,44,0.12); }
+      50% { box-shadow: 0 0 14px rgba(165,226,44,0.8), 0 0 30px rgba(165,226,44,0.3); }
+      100% { box-shadow: 0 0 8px rgba(165,226,44,0.5), 0 0 18px rgba(165,226,44,0.12); }
+    }
+
+    .progress-labels {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .progress-label {
+      flex: 1;
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #3D4249;
+      text-align: center;
+      transition: color 0.5s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress-label.active {
+      color: #A5E22C;
+    }
+
+    .progress-label.complete {
+      color: #5A5E65;
+    }
+
+    /* ── Slide container ── */
+
+    .slides-container { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+    .slide {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .slide.active {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      opacity: 1;
+    }
+    .slide.no-animate { transition: none; }
+    .slide.slide-exiting {
+      opacity: 0;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* ── Slide typography ── */
+
+    .slide-title {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: #FFFFFF;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .slide-subtitle {
+      font-size: 13px;
+      color: #6A6A6E;
+      margin-bottom: 0;
+      line-height: 1.55;
+    }
+
+    .slide-title,
+    .slide-subtitle {
+      text-align: center;
+    }
+
+    /* ── Form fields ── */
+
+    .field-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      gap: 0;
+      margin-bottom: 0;
+      padding: 12px 0;
+    }
+
+    .field-label {
+      display: block;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 600;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .field-required { color: #A5E22C; margin-left: 2px; }
+
+    .field-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 16px 18px;
+      color: #fff;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+    }
+
+    .field-input::placeholder { color: rgba(255,255,255,0.25); }
+    .field-input:-webkit-autofill,
+    .field-input:-webkit-autofill:hover,
+    .field-input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px rgba(13,15,19,1) inset;
+      -webkit-text-fill-color: #fff;
+      caret-color: #fff;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+    .field-input:focus {
+      border-color: rgba(165, 226, 44, 0.35);
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 0 0 3px rgba(165, 226, 44, 0.08);
+    }
+
+    /* ── Select (scroll wheel) ── */
+
+    .field-select {
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236A6A6E' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 34px;
+    }
+
+    .field-select option { background: #0F1012; color: #EEEEED; }
+
+
+    /* ── Forward button ── */
+
+    .forward-btn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-bottom: 12px;
+    }
+
+    .forward-btn {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      align-self: center;
+      background: linear-gradient(135deg, #ACEA30 0%, #8EC420 100%);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s ease, opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 4px 16px rgba(165, 226, 44, 0.20);
+    }
+
+    .forward-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #BEFA3D 0%, #9CD428 100%);
+      box-shadow: 0 6px 28px rgba(165, 226, 44, 0.42);
+      transform: translateX(3px);
+    }
+
+    .forward-btn:disabled {
+      opacity: 0.18;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .forward-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: #000;
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Slide 1 form layout ── */
+
+    .slide1-form {
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 28px;
+    }
+
+    .slide1-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .slide1-header .slide-title {
+      margin-bottom: 8px;
+    }
+
+    .slide1-subline {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .slide1-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .slide1-row > div {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .slide1-continue {
+      width: 100%;
+      margin-top: -8px;
+      padding: 18px;
+      background: #A5E22C;
+      color: #111214;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: background 0.18s ease, opacity 0.18s ease;
+    }
+
+    .slide1-continue:hover:not(:disabled) {
+      background: #B8F540;
+    }
+
+    .slide1-continue:disabled {
+      opacity: 0.35;
+      background: #2A2C2F;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 520px) {
+      .slide1-row {
+        flex-direction: column;
+        gap: 28px;
+      }
+    }
+
+    /* ── Back button ── */
+
+    .back-btn {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      align-self: center;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    .back-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,0.20);
+      transform: translateX(-3px);
+    }
+
+    .back-btn:disabled {
+      opacity: 0.18;
+      cursor: not-allowed;
+    }
+
+    .back-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: rgba(255,255,255,0.75);
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Intake questions (single scrollable page) ── */
+
+    .mcq-body-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      border-radius: 12px;
+      background: rgba(10, 11, 13, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .mcq-body-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #A5E22C 0%, rgba(165, 226, 44, 0.2) 100%);
+      border-radius: 3px 0 0 3px;
+      z-index: 1;
+    }
+
+    .mcq-body-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 48px;
+      background: linear-gradient(to top, #0A0B0D, transparent);
+      pointer-events: none;
+      z-index: 1;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .mcq-scroll {
+      height: 100%;
+      overflow-y: auto;
+      padding: 28px 28px 48px;
+      scrollbar-width: thin;
+      scrollbar-color: #1E2226 transparent;
+    }
+    .mcq-scroll::-webkit-scrollbar { width: 3px; }
+    .mcq-scroll::-webkit-scrollbar-track { background: transparent; }
+    .mcq-scroll::-webkit-scrollbar-thumb { background: #1E2226; border-radius: 3px; }
+
+    .mcq-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .mcq-section-title {
+      font-family: 'Roboto Slab', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #E2E2E0;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .mcq-section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(165, 226, 44, 0.25), transparent);
+      margin-bottom: 48px;
+    }
+
+    .mcq-block { margin-bottom: 0; text-align: center; }
+
+    .mcq-block-divider {
+      width: 60px;
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      margin: 40px auto;
+    }
+
+    .mcq-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 10px;
+    }
+
+    .mcq-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: transparent;
+      border: 1.5px solid rgba(165, 226, 44, 0.4);
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(165, 226, 44, 0.7);
+      flex-shrink: 0;
+      margin-bottom: 4px;
+      transition: all 0.3s ease;
+    }
+    .mcq-block.answered .mcq-num {
+      background: rgba(165, 226, 44, 0.15);
+      border-color: #A5E22C;
+      color: #A5E22C;
+    }
+
+    .mcq-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .mcq-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #E2E2E0;
+      letter-spacing: 0.01em;
+    }
+
+    .mcq-info-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: transparent;
+      color: rgba(255,255,255,0.3);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: border-color 0.2s ease, color 0.2s ease;
+      flex-shrink: 0;
+    }
+    .mcq-info-btn:hover {
+      border-color: rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.5);
+    }
+    .mcq-info-btn.active {
+      border-color: #A5E22C;
+      color: #A5E22C;
+    }
+
+    .mcq-tooltip {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.25s ease;
+      margin: 0 auto;
+      max-width: 480px;
+    }
+    .mcq-tooltip.open {
+      max-height: 80px;
+      opacity: 1;
+      margin-top: 8px;
+    }
+    .mcq-tooltip-inner {
+      background: rgba(165, 226, 44, 0.06);
+      border: 1px solid rgba(165, 226, 44, 0.12);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+    }
+
+    .mcq-sublabel {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      font-weight: 400;
+      font-style: italic;
+      margin-top: 4px;
+    }
+
+    /* ── Pills (shared) ── */
+
+    .pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 18px;
+      background: transparent;
+      border: 1px solid #2A2C2F;
+      border-radius: 100px;
+      color: #7A7A7D;
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .pill:hover {
+      border-color: #333538;
+      color: #E2E2E0;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .pill.selected {
+      background: rgba(143, 191, 107, 0.12);
+      border-color: #8FBF6B;
+      color: #E2E2E0;
+      font-weight: 500;
+      box-shadow: 0 0 0 1px rgba(143, 191, 107, 0.15), inset 0 0 6px rgba(143, 191, 107, 0.06);
+    }
+
+    .pill.selected:hover {
+      background: rgba(143, 191, 107, 0.18);
+    }
+
+    /* Multi-select checkbox indicator */
+    .pill.multi::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid #2A2C2F;
+      border-radius: 3px;
+      margin-right: 8px;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .pill.multi.selected::before {
+      background: #8FBF6B;
+      border-color: #8FBF6B;
+    }
+
+    /* Cascading sublayer */
+    .mcq-sublayer {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+                  opacity 0.3s ease,
+                  margin 0.3s ease;
+      margin-top: 0;
+    }
+    .mcq-sublayer.visible {
+      max-height: 500px;
+      opacity: 1;
+      margin-top: 12px;
+    }
+
+    .mcq-sublayer-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      font-weight: 500;
+      text-align: center;
+      margin-top: 16px;
+      margin-bottom: 10px;
+    }
+
+    /* Other text input */
+    .mcq-other-input {
+      display: none;
+      margin-top: 8px;
+    }
+    .mcq-other-input.visible { display: block; }
+
+    .mcq-other-input input {
+      background: #1A1C1F;
+      border: 1px solid #2A2C2F;
+      border-radius: 8px;
+      color: #E2E2E0;
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      padding: 10px 16px;
+      width: 240px;
+      max-width: 100%;
+      outline: none;
+      transition: border-color 0.2s ease;
+      margin: 0 auto;
+      display: block;
+    }
+    .mcq-other-input input:focus {
+      border-color: rgba(165, 226, 44, 0.35);
+      box-shadow: 0 0 0 3px rgba(165, 226, 44, 0.08);
+    }
+    .mcq-other-input input::placeholder { color: #55555A; }
+
+    /* Dividers and group labels */
+    .mcq-divider {
+      height: 1px;
+      background: #1A1C1F;
+      margin: 28px 0;
+    }
+
+    .mcq-group-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .mcq-group-label span {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #55555A;
+      flex-shrink: 0;
+    }
+    .mcq-group-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1A1C1F;
+    }
+
+    /* Submit area */
+    .mcq-submit-area {
+      padding: 16px 0 0;
+      display: flex;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mcq-submit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      background: #A5E22C;
+      color: #111214;
+      font-family: 'Roboto Slab', serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .mcq-submit-btn.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mcq-submit-btn.active:hover {
+      background: #B8F540;
+      transform: translateY(-1px);
+    }
+    .mcq-submit-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Pill micro-animations */
+    @keyframes pillPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+    .pill.just-selected { animation: pillPop 0.2s ease; }
+
+    @keyframes checkIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .mcq-block.just-answered .mcq-num { animation: checkIn 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
+    /* ── Interview card (Slide 3) ── */
+
+    .iv-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      padding: 8px 0 80px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Previous answers stack */
+    .iv-prev-stack {
+      flex-shrink: 0;
+      overflow: hidden;
+      margin-bottom: 32px;
+      width: 100%;
+    }
+    .iv-prev-stack:empty { margin-bottom: 0; }
+
+    .iv-prev {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #1A1C1F;
+      border: 1px solid #2A2C2F;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .iv-prev.new {
+      animation: ivCollapseIn 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    }
+    .iv-prev.fading-out {
+      opacity: 0;
+      transform: translateY(-8px);
+      max-height: 0 !important;
+      margin-bottom: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      overflow: hidden;
+      transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease, margin-bottom 0.3s ease, padding 0.3s ease;
+    }
+    @keyframes ivCollapseIn {
+      from { opacity: 0; transform: translateY(-8px); max-height: 0; margin-bottom: 0; padding: 0 16px; }
+      to   { opacity: 1; transform: translateY(0); max-height: 50px; margin-bottom: 6px; padding: 10px 16px; }
+    }
+
+    .iv-prev-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(165,226,44,0.15);
+      border: 1px solid rgba(165,226,44,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 500; color: #A5E22C; flex-shrink: 0;
+    }
+    .iv-prev-q { font-size: 12px; color: #55555A; width: 140px; flex-shrink: 0; }
+    .iv-prev-text { font-size: 12px; color: #7A7A7D; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iv-prev-check { color: #A5E22C; flex-shrink: 0; opacity: 0.6; }
+
+    /* Question card */
+    /* Reactive waveform */
+    .iv-waveform-wrap {
+      width: 100%;
+      height: 60px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .iv-waveform-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .iv-card-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+      width: 100%;
+    }
+
+    .iv-card {
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      position: relative;
+    }
+    .iv-card.entering { animation: ivFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .iv-card.exiting  { animation: ivFadeOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+    @keyframes ivFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes ivFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+
+    /* Progress section — hidden */
+    .iv-progress-row { display: none; }
+    .iv-ring-label {
+      font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.3);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .iv-ring-sub { display: none; }
+    .iv-badge { display: none; }
+
+    /* Question text */
+    .iv-q-text {
+      font-family: 'Roboto Slab', serif;
+      font-size: 20px; font-weight: 700; color: #fff;
+      line-height: 1.35; margin-bottom: 28px;
+      text-align: left;
+    }
+    .iv-q-context {
+      display: none;
+    }
+
+    /* Answer area */
+    .iv-textarea {
+      width: 100%; min-height: 200px; max-height: 300px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      color: #fff; font-family: 'Roboto', sans-serif;
+      font-size: 15px; font-weight: 400; line-height: 1.6; padding: 20px;
+      resize: vertical; outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box;
+    }
+    .iv-textarea:focus {
+      border-color: rgba(165, 226, 44, 0.35);
+      background: rgba(255,255,255,0.05);
+      box-shadow: 0 0 0 3px rgba(165, 226, 44, 0.08);
+    }
+    .iv-textarea::placeholder { color: rgba(255,255,255,0.25); }
+
+    .iv-meta { display: flex; align-items: center; justify-content: flex-end; margin-top: 12px; margin-bottom: 24px; }
+    .iv-hint { display: none; }
+    .iv-char-count { font-size: 12px; color: rgba(255,255,255,0.2); font-variant-numeric: tabular-nums; }
+
+    .iv-submit-row { display: flex; gap: 0; }
+
+    .iv-back-btn {
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-right: 12px;
+      transition: opacity 0.2s ease, width 0.2s ease, margin 0.2s ease, border-color 0.2s ease, background 0.2s ease, border-width 0.2s ease;
+    }
+    .iv-back-btn:hover {
+      border-color: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.03);
+    }
+    .iv-back-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: rgba(255,255,255,0.35);
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .iv-back-btn:hover svg {
+      stroke: rgba(255,255,255,0.55);
+    }
+    .iv-back-btn.hidden {
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+      margin-right: 0;
+      border: none;
+      overflow: hidden;
+    }
+
+    .iv-submit-btn {
+      flex: 1;
+      padding: 18px;
+      background: #A5E22C;
+      color: #111214;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.18s ease, opacity 0.18s ease;
+      opacity: 0.25;
+      pointer-events: none;
+      text-align: center;
+    }
+    .iv-submit-btn.active { opacity: 1; pointer-events: auto; }
+    .iv-submit-btn.active:hover { background: #B8F540; }
+    .iv-submit-btn.active:active { transform: none; }
+    .iv-submit-btn svg { display: none; }
+
+    /* Loading state inside card */
+    .iv-loading {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 80px 0;
+      font-size: 13px; color: #55555A; gap: 16px;
+    }
+
+    /* Completion state */
+    .iv-complete {
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 20px 0;
+    }
+    .iv-complete-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(165,226,44,0.12);
+      border: 1px solid rgba(165,226,44,0.25);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .iv-complete-icon svg { width: 24px; height: 24px; stroke: #A5E22C; fill: none; }
+    .iv-complete-title {
+      font-family: 'Roboto Slab', serif; font-size: 20px;
+      font-weight: 600; color: #E2E2E0; margin-top: 20px;
+    }
+    .iv-complete-sub { font-size: 14px; color: #55555A; margin-top: 8px; }
+    .iv-complete-btns { display: flex; gap: 12px; margin-top: 28px; justify-content: center; }
+    .iv-btn-more {
+      background: transparent; border: 1px solid #2A2C2F;
+      color: #7A7A7D; font-size: 13px; padding: 10px 20px;
+      border-radius: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .iv-btn-more:hover { border-color: #333538; color: #E2E2E0; }
+    .iv-btn-generate {
+      background: #A5E22C; color: #111214; font-family: 'Roboto Slab', serif;
+      font-weight: 600; font-size: 13px; padding: 10px 24px;
+      border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .iv-btn-generate:hover { background: #B8F540; }
+
+    .iv-shortcut { display: none; }
+
+    @media (max-width: 480px) {
+      .iv-q-text { font-size: 17px; }
+      .iv-prev-q { width: 100px; font-size: 11px; }
+      .iv-textarea { min-height: 160px; }
+      .iv-complete-btns { flex-direction: column; align-items: center; }
+    }
+
+        .msg {
+      max-width: 88%;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.68;
+      word-break: break-word;
+      border-radius: 12px;
+    }
+
+    .msg-assistant {
+      align-self: flex-start;
+      background: #14171C;
+      border: 1px solid #1E2226;
+      border-left: 2px solid #A5E22C;
+      border-radius: 4px 12px 12px 12px;
+      color: #EEEEED;
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: #0F1215;
+      border: 1px solid #252A30;
+      border-radius: 12px 4px 12px 12px;
+      color: #EEEEED;
+      max-width: 80%;
+    }
+
+    .typing-indicator {
+      align-self: flex-start;
+      background: #14171C;
+      border: 1px solid #1E2226;
+      border-left: 2px solid #A5E22C;
+      border-radius: 4px 12px 12px 12px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .typing-dot {
+      width: 5px;
+      height: 5px;
+      background: #6A6A6E;
+      border-radius: 50%;
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.18s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.36s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      width: 100%;
+    }
+
+    .chat-textarea {
+      flex: 1;
+      background: #0D0F13;
+      border: 1px solid #222629;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #EEEEED;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      outline: none;
+      resize: none;
+      min-height: 46px;
+      max-height: 120px;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      -webkit-appearance: none;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.35);
+    }
+
+    .chat-textarea::placeholder { color: #383C42; }
+    .chat-textarea:focus {
+      border-color: #A5E22C;
+      box-shadow: 0 0 0 3px rgba(165, 226, 44, 0.10), inset 0 1px 3px rgba(0,0,0,0.35);
+    }
+
+    .chat-send-btn {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, #ACEA30 0%, #8EC420 100%);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 3px 12px rgba(165, 226, 44, 0.22);
+    }
+
+    .chat-send-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #BEFA3D 0%, #9CD428 100%);
+      box-shadow: 0 4px 20px rgba(165, 226, 44, 0.38);
+    }
+
+    .chat-send-btn:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    .chat-send-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: #000;
+    }
+
+    /* ── Confirmation prompt ── */
+
+    .confirm-prompt {
+      background: #191C20;
+      border: 1px solid #1E2226;
+      border-left: 2px solid #A5E22C;
+      padding: 20px;
+      margin-top: 4px;
+    }
+
+    .confirm-prompt p {
+      font-size: 14px;
+      color: #EEEEED;
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #000;
+      background: #A5E22C;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      min-height: 44px;
+    }
+
+    .btn-primary:hover { background: #B8F033; }
+
+    .btn-secondary {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 400;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6A6A6E;
+      background: transparent;
+      border: 1px solid #1E2226;
+      border-radius: 8px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+      min-height: 44px;
+    }
+
+    .btn-secondary:hover {
+      border-color: #282D32;
+      color: #EEEEED;
+    }
+
+    /* ── Review (Slide 4) ── */
+
+    #slide-4.active {
+      gap: 0;
+      position: relative;
+    }
+
+
+    /* ── Globe canvas (Widget 4 only) ── */
+    .rv-globe-canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .review-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px 24px;
+      position: relative;
+      z-index: 2;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── Animated checkmark icon ── */
+    .rv-check-icon {
+      width: 72px;
+      height: 72px;
+      margin-bottom: 36px;
+    }
+    .rv-check-icon .rv-circle-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.04);
+      stroke-width: 1.5;
+    }
+    .rv-check-icon .rv-circle-draw {
+      fill: none;
+      stroke: #A5E22C;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-dasharray: 188;
+      stroke-dashoffset: 188;
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+    .rv-check-icon.rv-animating .rv-circle-draw {
+      animation: rvDrawCircle 1s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+    }
+    .rv-check-icon .rv-tick {
+      fill: none;
+      stroke: #A5E22C;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 24;
+      stroke-dashoffset: 24;
+    }
+    .rv-check-icon.rv-animating .rv-tick {
+      animation: rvDrawTick 0.35s cubic-bezier(0.4, 0, 0.2, 1) 1.1s forwards;
+    }
+    @keyframes rvDrawCircle { to { stroke-dashoffset: 0; } }
+    @keyframes rvDrawTick   { to { stroke-dashoffset: 0; } }
+
+    /* ── Staggered entrance base ── */
+    .rv-stagger {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    .rv-stagger.rv-visible {
+      animation: rvFadeUp 0.7s ease forwards;
+    }
+    @keyframes rvFadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .rv-title {
+      font-family: 'Roboto Slab', serif;
+      font-size: 34px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 14px;
+      line-height: 1.15;
+    }
+
+    .rv-title span { color: #A5E22C; }
+
+    .rv-subtitle {
+      font-size: 15px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 24px;
+      max-width: 380px;
+      line-height: 1.6;
+    }
+
+    .rv-completion-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.2);
+      margin-bottom: 20px;
+    }
+    .rv-completion-line .rv-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+    }
+    .rv-completion-line .rv-green { color: rgba(165,226,44,0.55); }
+
+    .rv-divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(165,226,44,0.18), transparent);
+      margin-bottom: 32px;
+    }
+
+    .rv-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 18px;
+      background: #A5E22C;
+      color: #111214;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+
+    .rv-btn-primary:hover { filter: brightness(1.08); }
+
+    .rv-btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      padding: 8px 16px;
+      color: rgba(255, 255, 255, 0.2);
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      margin-top: 20px;
+    }
+
+    .rv-btn-secondary:hover {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .rv-reassurance {
+      margin-top: 28px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .rv-reassurance svg { width: 12px; height: 12px; stroke: rgba(255,255,255,0.1); stroke-width: 1.5; fill: none; }
+
+    /* ── Widget 4 sub-slide transitions ── */
+    .review-content,
+    .addmore-content {
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .review-content.rv-hidden,
+    .addmore-content.rv-hidden {
+      display: none;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ── Add More Info sub-slide ── */
+    .addmore-content {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .addmore-heading {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 26px;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .addmore-subtext {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .addmore-textarea {
+      width: 100%;
+      min-height: 180px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 20px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #fff;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 24px;
+    }
+    .addmore-textarea::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+    .addmore-textarea:focus {
+      border-color: rgba(165, 226, 44, 0.35);
+      background: rgba(255,255,255,0.05);
+      box-shadow: 0 0 0 3px rgba(165, 226, 44, 0.08);
+    }
+
+    .addmore-confirm {
+      width: 100%;
+      padding: 18px;
+      background: #A5E22C;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: #111214;
+      cursor: pointer;
+      transition: filter 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .addmore-confirm:hover { filter: brightness(1.08); }
+
+    .addmore-back {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.3);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 16px;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .addmore-back:hover { color: rgba(255,255,255,0.5); }
+
+    @media (max-width: 480px) {
+      .rv-title { font-size: 26px; }
+      .rv-subtitle { font-size: 14px; }
+      .addmore-heading { font-size: 22px; }
+    }
+
+    .model-header {
+      text-align: center;
+      opacity: 0;
+      transform: translateY(-16px);
+      animation: modelFadeDown 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+    }
+
+    .model-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border: 1px solid rgba(165, 226, 44, 0.25);
+      border-radius: 100px;
+      background: rgba(165, 226, 44, 0.06);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #A5E22C;
+      margin-bottom: 14px;
+    }
+
+    .model-badge svg {
+      width: 13px; height: 13px;
+      stroke: #A5E22C; fill: none;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .model-header .slide-title {
+      font-size: clamp(22px, 3.2vw, 28px);
+      margin-bottom: 6px;
+    }
+
+    .model-header .slide-subtitle {
+      font-size: 13px;
+      color: #6A6A6E;
+      margin-bottom: 0;
+    }
+
+    .model-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex: 1;
+      color: #6A6A6E;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #model-loading-text {
+      transition: opacity 0.3s ease;
+    }
+
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #1E2226;
+      border-top-color: #A5E22C;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes modelFadeDown {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modelFadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modelGlowIn {
+      from { opacity: 0; box-shadow: 0 0 0 rgba(165, 226, 44, 0); }
+      to   { opacity: 1; box-shadow: 0 0 30px rgba(165, 226, 44, 0.04); }
+    }
+
+    .model-content {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      gap: 20px;
+    }
+    .model-content.visible {
+      display: flex;
+    }
+
+    .model-body-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      border-radius: 12px;
+      background: rgba(10, 11, 13, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      opacity: 0;
+      animation: modelGlowIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
+    }
+
+    .model-body-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #A5E22C 0%, rgba(165, 226, 44, 0.2) 100%);
+      border-radius: 3px 0 0 3px;
+      z-index: 1;
+    }
+
+    /* Top + bottom fade masks on the scroll area */
+    .model-body-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 48px;
+      background: linear-gradient(to top, #0A0B0D, transparent);
+      pointer-events: none;
+      z-index: 1;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .model-body {
+      padding: 28px 28px 48px;
+      overflow-y: auto;
+      height: 100%;
+      max-height: calc(100dvh - 380px);
+      min-height: 200px;
+      scrollbar-width: thin;
+      scrollbar-color: #1E2226 transparent;
+    }
+
+    .model-body::-webkit-scrollbar { width: 3px; }
+    .model-body::-webkit-scrollbar-thumb { background: #1E2226; border-radius: 3px; }
+
+    .model-body h2 {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+      margin: 32px 0 6px;
+    }
+
+    .model-body h2:first-child { margin-top: 0; }
+
+    .model-body h3 {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 11px;
+      color: #A5E22C;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 28px 0 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(165, 226, 44, 0.1);
+    }
+
+    .model-body h3:first-child { margin-top: 0; }
+
+    .model-body p {
+      font-size: 15px;
+      line-height: 1.85;
+      color: #B8B8B6;
+      margin-bottom: 14px;
+      letter-spacing: 0.005em;
+    }
+
+    .model-body p:first-child {
+      font-size: 15px;
+      color: #CCCCCA;
+    }
+
+    .model-body ol,
+    .model-body ul {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+
+    .model-body li {
+      font-size: 15px;
+      line-height: 1.75;
+      color: #B8B8B6;
+      margin-bottom: 6px;
+    }
+
+    .model-body strong {
+      color: #FFFFFF;
+      font-weight: 700;
+      font-family: 'Roboto Slab', serif;
+      font-size: 0.95em;
+    }
+
+    .model-body em {
+      color: #9A9A98;
+      font-style: italic;
+    }
+
+    .model-body hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(165, 226, 44, 0.12), transparent);
+      margin: 28px 0;
+    }
+
+    .model-footer {
+      opacity: 0;
+      animation: modelFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.5s forwards;
+      padding: 0 4px;
+    }
+
+    .model-divider {
+      display: none;
+    }
+
+    .model-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .model-actions .btn-primary {
+      flex: 1;
+      max-width: 280px;
+      text-align: center;
+    }
+
+    /* Loading state */
+
+    /* ── Completion screen ── */
+
+    .completion-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 32px 0 16px;
+      gap: 24px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .slide-back-btn {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s ease, transform 0.18s ease;
+      z-index: 5;
+    }
+
+    .slide-back-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateX(-3px);
+    }
+
+    .slide-back-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: rgba(255, 255, 255, 0.5);
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .completion-back-btn {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s ease, transform 0.18s ease;
+      z-index: 5;
+    }
+
+    .completion-back-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateX(-3px);
+    }
+
+    .completion-back-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: rgba(255, 255, 255, 0.5);
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Post-diagnostic page ── */
+
+    #next-steps-page {
+      opacity: 0;
+      transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+      background: #0A0B0D;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    #next-steps-page.page-visible {
+      opacity: 1;
+    }
+
+    .post-diag-content {
+      max-width: 720px;
+      width: 100%;
+      padding: 0 24px 0;
+      margin-bottom: 6vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 32px;
+    }
+
+    .post-diag-eyebrow {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #FFFFFF;
+    }
+
+    .post-diag-headline {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 800;
+      font-size: clamp(24px, 3.8vw, 40px);
+      line-height: 1.15;
+      color: #FFFFFF;
+      letter-spacing: -0.025em;
+      margin: 0;
+    }
+
+    .post-diag-headline em {
+      font-style: normal;
+      color: #A5E22C;
+    }
+
+    .post-diag-subheadline {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      font-size: 17px;
+      line-height: 1.7;
+      color: #FFFFFF;
+      max-width: 520px;
+      margin: 0;
+    }
+
+    .post-diag-video {
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 16 / 9;
+      background: #111316;
+      border: 2px solid #A5E22C;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .post-diag-video iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* ── Badge ── */
+    .cta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border: 1px solid rgba(165, 226, 44, 0.3);
+      border-radius: 100px;
+      background: rgba(165, 226, 44, 0.06);
+    }
+
+    .cta-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: #A5E22C;
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .cta-badge span {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #A5E22C;
+    }
+
+    /* ── Headline ── */
+    .cta-headline {
+      font-family: 'Roboto Slab', serif;
+      font-weight: 800;
+      font-size: clamp(24px, 4vw, 32px);
+      color: #FFFFFF;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    .cta-headline em {
+      font-style: normal;
+      color: #A5E22C;
+    }
+
+    /* ── Subtext ── */
+    .cta-subtext {
+      font-size: 15px;
+      color: #6A6A6E;
+      line-height: 1.65;
+      max-width: 400px;
+      margin: 0;
+    }
+
+    /* ── Video ── */
+    .cta-video-placeholder {
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 16 / 9;
+      background: #0D0F13;
+      border: 1px solid #1E2226;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(165, 226, 44, 0.06);
+    }
+
+    /* ── Divider ── */
+    .cta-divider {
+      width: 48px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #A5E22C, transparent);
+      border-radius: 1px;
+    }
+
+    /* ── Pitch text ── */
+    .cta-pitch {
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      color: #AAAAAB;
+      line-height: 1.65;
+      max-width: 380px;
+      margin: 0;
+    }
+
+    /* ── Book button ── */
+    .cta-book-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Roboto Slab', serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #000;
+      background: linear-gradient(135deg, #ACEA30 0%, #8EC420 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 18px 48px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+      box-shadow: 0 6px 28px rgba(165, 226, 44, 0.22), 0 0 0 1px rgba(165, 226, 44, 0.08), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+
+    .cta-book-btn:hover {
+      background: linear-gradient(135deg, #BEFA3D 0%, #9CD428 100%);
+      box-shadow: 0 10px 48px rgba(165, 226, 44, 0.42), 0 0 0 1px rgba(165, 226, 44, 0.15), inset 0 1px 0 rgba(255,255,255,0.18);
+      transform: translateY(-2px);
+    }
+
+    .cta-book-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .cta-book-icon {
+      width: 18px;
+      height: 18px;
+      stroke: #000;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Support text ── */
+    .cta-support {
+      font-size: 12px;
+      color: #4A4A4E;
+      letter-spacing: 0.06em;
+      margin: 0;
+    }
+
+    /* ── Error toast ── */
+
+    #error-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #111316;
+      border: 1px solid #1E2226;
+      border-left: 2px solid #A5E22C;
+      padding: 12px 20px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: #6A6A6E;
+      max-width: 380px;
+      width: calc(100% - 32px);
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #error-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    #iv-pushback-toast {
+      background: rgba(165, 226, 44, 0.08);
+      border: 1px solid rgba(165, 226, 44, 0.18);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      width: 100%;
+      text-align: center;
+      line-height: 1.5;
+      box-sizing: border-box;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      padding: 0 24px;
+      margin-top: 0;
+      transition: opacity 0.3s ease, max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+      pointer-events: none;
+    }
+    #iv-pushback-toast.show {
+      opacity: 1;
+      max-height: 80px;
+      padding: 14px 24px;
+      margin-top: 16px;
+    }
+
+    /* ── Mobile ── */
+
+    @media (max-width: 640px) {
+      #widget-wrapper { padding: 0; align-items: flex-start; }
+
+      .widget-card {
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        padding: 24px 28px;
+        min-height: calc(100dvh);
+      }
+
+      .chat-messages { max-height: calc(100dvh - 420px); min-height: 160px; }
+      .model-body  { max-height: 25vh; }
+      .confirm-buttons { flex-direction: column; }
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       MOBILE-FIRST OVERRIDES (320px – 768px)
+    ══════════════════════════════════════════════════════════════ */
+
+    @media (max-width: 768px) {
+
+      /* ── iOS zoom prevention ── */
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+
+      /* ── Hide dev toolbar ── */
+      #dev-toolbar {
+        display: none !important;
+      }
+
+      /* ── Global: widget wrapper & card ── */
+      #widget-wrapper {
+        padding: 12px 0 0;
+        transform: scale(0.9);
+        transform-origin: top center;
+      }
+      .widget-card {
+        max-width: 100%;
+        padding: 0 28px;
+      }
+
+      /* ── Progress bar ── */
+      .progress-bar-wrap {
+        margin-top: 10px;
+        margin-bottom: 18px;
+      }
+      .progress-label {
+        font-size: 9px;
+        letter-spacing: 0.06em;
+      }
+
+      /* ── Welcome / Landing page ── */
+      #landing {
+        justify-content: center;
+      }
+      .landing-content {
+        padding: 0 28px;
+        gap: 0;
+      }
+      .landing-eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .landing-eyebrow::before,
+      .landing-eyebrow::after {
+        flex: 0 0 30px;
+      }
+      .landing-headline {
+        font-size: 26px;
+        line-height: 1.18;
+        margin-bottom: 12px;
+      }
+      .landing-subheadline {
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+      .video-placeholder {
+        max-width: 100%;
+        margin-bottom: 24px;
+      }
+      .cta-button {
+        width: 100%;
+        padding: 18px 24px;
+        font-size: 13px;
+        min-height: 52px;
+      }
+
+      /* ── Widget 1 — Personal Info ── */
+      .slide1-form {
+        max-width: 100%;
+        padding: 0;
+        gap: 20px;
+        transform: scale(0.92);
+        transform-origin: top center;
+      }
+      .slide1-header {
+        margin-bottom: 16px;
+      }
+      .slide1-header .slide-title {
+        font-size: 24px;
+      }
+      .slide1-continue {
+        min-height: 52px;
+      }
+
+      /* ── Widget 2 — Quick-Fire MCQs ── */
+      .mcq-body-wrap {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        transform: scale(0.95);
+        transform-origin: top center;
+      }
+      .mcq-scroll {
+        padding: 24px 28px 48px;
+      }
+      .mcq-inner {
+        max-width: 100%;
+      }
+      .mcq-tooltip {
+        max-width: 100%;
+      }
+      .mcq-info-btn {
+        min-width: 28px;
+        min-height: 28px;
+        width: 28px;
+        height: 28px;
+      }
+      .pill {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 44px;
+      }
+      .mcq-submit-btn {
+        width: 100%;
+        justify-content: center;
+        min-height: 52px;
+        padding: 16px;
+      }
+      .mcq-other-input input {
+        min-height: 48px;
+      }
+
+      /* ── Widget 3 — Deep Dive Interview ── */
+      .iv-content {
+        max-width: 100%;
+        padding: 8px 0 20px;
+        justify-content: center;
+      }
+      .iv-q-text {
+        font-size: 17px;
+        margin-bottom: 20px;
+      }
+      .iv-textarea {
+        min-height: 150px;
+      }
+      .iv-prev-q {
+        width: 80px;
+        font-size: 11px;
+      }
+      .iv-prev-text {
+        font-size: 11px;
+      }
+      .iv-back-btn {
+        width: 48px;
+        height: 48px;
+      }
+      .iv-submit-btn {
+        min-height: 52px;
+      }
+      .iv-complete-btns {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+      .iv-btn-generate,
+      .iv-btn-more {
+        width: 100%;
+      }
+
+      /* ── Widget 4 — Review page ── */
+      .rv-globe-canvas {
+        top: 35%;
+      }
+      .review-content {
+        padding: 16px 28px;
+        max-width: 100%;
+        justify-content: flex-start;
+        padding-top: 28vh;
+        transform: scale(0.65);
+        transform-origin: top center;
+      }
+      .rv-title {
+        font-size: 28px;
+        margin-bottom: 12px;
+      }
+      .rv-subtitle {
+        font-size: 14px;
+        max-width: 100%;
+        margin-bottom: 20px;
+      }
+      .rv-completion-line {
+        font-size: 11px;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px 6px;
+      }
+      .rv-btn-primary {
+        min-height: 52px;
+      }
+      .rv-btn-secondary {
+        min-height: 44px;
+      }
+      .addmore-content {
+        padding: 0 28px;
+      }
+      .addmore-textarea {
+        width: 100%;
+      }
+      .addmore-confirm {
+        width: 100%;
+        min-height: 52px;
+      }
+
+      /* ── Widget 5 — Dynamic Model ── */
+      .model-header .slide-title {
+        font-size: 26px;
+      }
+      .model-body-wrap {
+        max-width: 100%;
+      }
+      .model-body {
+        padding: 20px;
+        max-height: 20vh;
+      }
+      .model-body p,
+      .model-body li {
+        font-size: 14px;
+      }
+      .model-actions {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+      }
+      .model-actions .btn-primary {
+        max-width: 100%;
+        width: 100%;
+        min-height: 52px;
+      }
+
+      /* ── Post-diagnostic sales page ── */
+      .post-diag-content {
+        padding: 0 28px;
+        gap: 0;
+      }
+      .post-diag-eyebrow {
+        margin-bottom: 16px;
+      }
+      .post-diag-headline {
+        font-size: 26px;
+        margin-bottom: 12px;
+      }
+      .post-diag-subheadline {
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+      .post-diag-video {
+        max-width: 100%;
+        margin-bottom: 24px;
+      }
+    }
+
+    /* ── Extra-narrow screens (iPhone SE, 320–390px) ── */
+    @media (max-width: 390px) {
+      .progress-label {
+        font-size: 8px;
+        letter-spacing: 0.03em;
+      }
+      .landing-headline {
+        font-size: 24px;
+      }
+      .landing-eyebrow::before,
+      .landing-eyebrow::after {
+        flex: 0 0 20px;
+      }
+      .pill {
+        padding: 9px 14px;
+        font-size: 12px;
+      }
+      .iv-prev {
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      .iv-prev-q {
+        width: 60px;
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       INTRO SCREEN
+  ════════════════════════════════════════════════════════════════ -->
+  <div id="intro-screen">
+    <svg id="intro-echo" class="echo-symbol" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M78 22 A38 38 0 1 0 78 98" stroke="white" stroke-opacity="0.25" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M90 14 A48 48 0 1 0 90 106" stroke="white" stroke-opacity="0.1" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M100 8 A55 55 0 1 0 100 112" stroke="white" stroke-opacity="0.04" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M108 3 A62 62 0 1 0 108 117" stroke="white" stroke-opacity="0.015" stroke-width="1" stroke-linecap="round"/>
+    </svg>
+    <div class="intro-wordmark-group">
+      <div class="intro-line"></div>
+      <div id="intro-text">Carbon Consulting</div>
+      <div class="intro-line-bottom"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       LANDING PAGE
+  ════════════════════════════════════════════════════════════════ -->
+  <div id="landing">
+
+    <div class="landing-content">
+
+      <img src="/images/First_Page.png" alt="Momentra — This Diagnostic Tool Will Use The Inputs You Provide To Generate A Dynamic Model For Scaling Your Offer" class="page-text-image fly-in" />
+
+      <!--
+        WELCOME PAGE VIDEO: Replace WELCOME_VIDEO_ID with your Loom video ID
+        To get the ID: open your Loom video, click Share, copy the link, the ID is the last part of the URL
+        Example: if your Loom link is https://www.loom.com/share/abc123def456 then the ID is abc123def456
+      -->
+      <div class="video-placeholder fly-in" id="video-container">
+        <!-- <iframe src="https://www.loom.com/embed/WELCOME_VIDEO_ID" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe> -->
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="opacity:0.18"><circle cx="24" cy="24" r="23" stroke="#fff" stroke-width="2"/><polygon points="19,14 19,34 36,24" fill="#fff"/></svg>
+      </div>
+
+      <button class="cta-button fly-in" id="landing-cta">GENERATE YOUR DYNAMIC MODEL</button>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       WIDGET
+  ════════════════════════════════════════════════════════════════ -->
+  <div id="widget-wrapper">
+    <div class="widget-card">
+
+      <div class="progress-bar-wrap" id="progress-bar-wrap">
+        <div class="progress-segments">
+          <div class="progress-seg" id="seg-1"><div class="progress-seg-fill" id="seg-fill-1"></div></div>
+          <div class="progress-seg" id="seg-2"><div class="progress-seg-fill" id="seg-fill-2"></div></div>
+          <div class="progress-seg" id="seg-3"><div class="progress-seg-fill" id="seg-fill-3"></div></div>
+          <div class="progress-seg" id="seg-4"><div class="progress-seg-fill" id="seg-fill-4"></div></div>
+          <div class="progress-seg" id="seg-5"><div class="progress-seg-fill" id="seg-fill-5"></div></div>
+        </div>
+        <div class="progress-labels">
+          <div class="progress-label" id="seg-label-1">Contact</div>
+          <div class="progress-label" id="seg-label-2">Rapid Fire</div>
+          <div class="progress-label" id="seg-label-3">Deep Dive</div>
+          <div class="progress-label" id="seg-label-4">Review</div>
+          <div class="progress-label" id="seg-label-5">Dynamic Model</div>
+        </div>
+      </div>
+
+      <div class="slides-container">
+
+        <!-- ── SLIDE 1: Contact ── -->
+        <div class="slide" id="slide-1">
+          <div class="slide1-form">
+            <div class="slide1-header">
+              <div class="slide-title" style="font-size: 26px;">Let's Get You Started</div>
+
+            </div>
+
+            <div class="slide1-row">
+              <div>
+                <label class="field-label" for="full-name">Full name <span class="field-required">*</span></label>
+                <input class="field-input" type="text" id="full-name" placeholder="Jane Smith" autocomplete="name">
+              </div>
+              <div>
+                <label class="field-label" for="instagram">Instagram handle <span class="field-required">*</span></label>
+                <input class="field-input" type="text" id="instagram" placeholder="@yourhandle">
+              </div>
+            </div>
+
+            <div>
+              <label class="field-label" for="email">Email address <span class="field-required">*</span></label>
+              <input class="field-input" type="email" id="email" placeholder="jane@example.com" autocomplete="email">
+            </div>
+
+            <div>
+              <label class="field-label" for="country">Country <span style="color:rgba(255,255,255,0.2);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+              <select class="field-input field-select" id="country">
+                <option value="">Select country...</option>
+                <option>🇦🇫 Afghanistan</option>
+                <option>🇦🇱 Albania</option>
+                <option>🇩🇿 Algeria</option>
+                <option>🇦🇩 Andorra</option>
+                <option>🇦🇴 Angola</option>
+                <option>🇦🇬 Antigua and Barbuda</option>
+                <option>🇦🇷 Argentina</option>
+                <option>🇦🇲 Armenia</option>
+                <option>🇦🇺 Australia</option>
+                <option>🇦🇹 Austria</option>
+                <option>🇦🇿 Azerbaijan</option>
+                <option>🇧🇸 Bahamas</option>
+                <option>🇧🇭 Bahrain</option>
+                <option>🇧🇩 Bangladesh</option>
+                <option>🇧🇧 Barbados</option>
+                <option>🇧🇾 Belarus</option>
+                <option>🇧🇪 Belgium</option>
+                <option>🇧🇿 Belize</option>
+                <option>🇧🇯 Benin</option>
+                <option>🇧🇹 Bhutan</option>
+                <option>🇧🇴 Bolivia</option>
+                <option>🇧🇦 Bosnia and Herzegovina</option>
+                <option>🇧🇼 Botswana</option>
+                <option>🇧🇷 Brazil</option>
+                <option>🇧🇳 Brunei</option>
+                <option>🇧🇬 Bulgaria</option>
+                <option>🇧🇫 Burkina Faso</option>
+                <option>🇧🇮 Burundi</option>
+                <option>🇰🇭 Cambodia</option>
+                <option>🇨🇲 Cameroon</option>
+                <option>🇨🇦 Canada</option>
+                <option>🇨🇻 Cape Verde</option>
+                <option>🇨🇫 Central African Republic</option>
+                <option>🇹🇩 Chad</option>
+                <option>🇨🇱 Chile</option>
+                <option>🇨🇳 China</option>
+                <option>🇨🇴 Colombia</option>
+                <option>🇰🇲 Comoros</option>
+                <option>🇨🇬 Congo</option>
+                <option>🇨🇷 Costa Rica</option>
+                <option>🇭🇷 Croatia</option>
+                <option>🇨🇺 Cuba</option>
+                <option>🇨🇾 Cyprus</option>
+                <option>🇨🇿 Czech Republic</option>
+                <option>🇨🇩 DR Congo</option>
+                <option>🇩🇰 Denmark</option>
+                <option>🇩🇯 Djibouti</option>
+                <option>🇩🇲 Dominica</option>
+                <option>🇩🇴 Dominican Republic</option>
+                <option>🇪🇨 Ecuador</option>
+                <option>🇪🇬 Egypt</option>
+                <option>🇸🇻 El Salvador</option>
+                <option>🇬🇶 Equatorial Guinea</option>
+                <option>🇪🇷 Eritrea</option>
+                <option>🇪🇪 Estonia</option>
+                <option>🇸🇿 Eswatini</option>
+                <option>🇪🇹 Ethiopia</option>
+                <option>🇫🇯 Fiji</option>
+                <option>🇫🇮 Finland</option>
+                <option>🇫🇷 France</option>
+                <option>🇬🇦 Gabon</option>
+                <option>🇬🇲 Gambia</option>
+                <option>🇬🇪 Georgia</option>
+                <option>🇩🇪 Germany</option>
+                <option>🇬🇭 Ghana</option>
+                <option>🇬🇷 Greece</option>
+                <option>🇬🇩 Grenada</option>
+                <option>🇬🇹 Guatemala</option>
+                <option>🇬🇳 Guinea</option>
+                <option>🇬🇼 Guinea-Bissau</option>
+                <option>🇬🇾 Guyana</option>
+                <option>🇭🇹 Haiti</option>
+                <option>🇭🇳 Honduras</option>
+                <option>🇭🇺 Hungary</option>
+                <option>🇮🇸 Iceland</option>
+                <option>🇮🇳 India</option>
+                <option>🇮🇩 Indonesia</option>
+                <option>🇮🇷 Iran</option>
+                <option>🇮🇶 Iraq</option>
+                <option>🇮🇪 Ireland</option>
+                <option>🇮🇱 Israel</option>
+                <option>🇮🇹 Italy</option>
+                <option>🇨🇮 Ivory Coast</option>
+                <option>🇯🇲 Jamaica</option>
+                <option>🇯🇵 Japan</option>
+                <option>🇯🇴 Jordan</option>
+                <option>🇰🇿 Kazakhstan</option>
+                <option>🇰🇪 Kenya</option>
+                <option>🇰🇮 Kiribati</option>
+                <option>🇰🇼 Kuwait</option>
+                <option>🇰🇬 Kyrgyzstan</option>
+                <option>🇱🇦 Laos</option>
+                <option>🇱🇻 Latvia</option>
+                <option>🇱🇧 Lebanon</option>
+                <option>🇱🇸 Lesotho</option>
+                <option>🇱🇷 Liberia</option>
+                <option>🇱🇾 Libya</option>
+                <option>🇱🇮 Liechtenstein</option>
+                <option>🇱🇹 Lithuania</option>
+                <option>🇱🇺 Luxembourg</option>
+                <option>🇲🇬 Madagascar</option>
+                <option>🇲🇼 Malawi</option>
+                <option>🇲🇾 Malaysia</option>
+                <option>🇲🇻 Maldives</option>
+                <option>🇲🇱 Mali</option>
+                <option>🇲🇹 Malta</option>
+                <option>🇲🇭 Marshall Islands</option>
+                <option>🇲🇷 Mauritania</option>
+                <option>🇲🇺 Mauritius</option>
+                <option>🇲🇽 Mexico</option>
+                <option>🇫🇲 Micronesia</option>
+                <option>🇲🇩 Moldova</option>
+                <option>🇲🇨 Monaco</option>
+                <option>🇲🇳 Mongolia</option>
+                <option>🇲🇪 Montenegro</option>
+                <option>🇲🇦 Morocco</option>
+                <option>🇲🇿 Mozambique</option>
+                <option>🇲🇲 Myanmar</option>
+                <option>🇳🇦 Namibia</option>
+                <option>🇳🇷 Nauru</option>
+                <option>🇳🇵 Nepal</option>
+                <option>🇳🇱 Netherlands</option>
+                <option>🇳🇿 New Zealand</option>
+                <option>🇳🇮 Nicaragua</option>
+                <option>🇳🇪 Niger</option>
+                <option>🇳🇬 Nigeria</option>
+                <option>🇰🇵 North Korea</option>
+                <option>🇲🇰 North Macedonia</option>
+                <option>🇳🇴 Norway</option>
+                <option>🇴🇲 Oman</option>
+                <option>🇵🇰 Pakistan</option>
+                <option>🇵🇼 Palau</option>
+                <option>🇵🇸 Palestine</option>
+                <option>🇵🇦 Panama</option>
+                <option>🇵🇬 Papua New Guinea</option>
+                <option>🇵🇾 Paraguay</option>
+                <option>🇵🇪 Peru</option>
+                <option>🇵🇭 Philippines</option>
+                <option>🇵🇱 Poland</option>
+                <option>🇵🇹 Portugal</option>
+                <option>🇶🇦 Qatar</option>
+                <option>🇷🇴 Romania</option>
+                <option>🇷🇺 Russia</option>
+                <option>🇷🇼 Rwanda</option>
+                <option>🇰🇳 Saint Kitts and Nevis</option>
+                <option>🇱🇨 Saint Lucia</option>
+                <option>🇻🇨 Saint Vincent and the Grenadines</option>
+                <option>🇼🇸 Samoa</option>
+                <option>🇸🇲 San Marino</option>
+                <option>🇸🇦 Saudi Arabia</option>
+                <option>🇸🇳 Senegal</option>
+                <option>🇷🇸 Serbia</option>
+                <option>🇸🇨 Seychelles</option>
+                <option>🇸🇱 Sierra Leone</option>
+                <option>🇸🇬 Singapore</option>
+                <option>🇸🇰 Slovakia</option>
+                <option>🇸🇮 Slovenia</option>
+                <option>🇸🇧 Solomon Islands</option>
+                <option>🇸🇴 Somalia</option>
+                <option>🇿🇦 South Africa</option>
+                <option>🇰🇷 South Korea</option>
+                <option>🇸🇸 South Sudan</option>
+                <option>🇪🇸 Spain</option>
+                <option>🇱🇰 Sri Lanka</option>
+                <option>🇸🇩 Sudan</option>
+                <option>🇸🇷 Suriname</option>
+                <option>🇸🇪 Sweden</option>
+                <option>🇨🇭 Switzerland</option>
+                <option>🇸🇾 Syria</option>
+                <option>🇹🇼 Taiwan</option>
+                <option>🇹🇯 Tajikistan</option>
+                <option>🇹🇿 Tanzania</option>
+                <option>🇹🇭 Thailand</option>
+                <option>🇹🇱 Timor-Leste</option>
+                <option>🇹🇬 Togo</option>
+                <option>🇹🇴 Tonga</option>
+                <option>🇹🇹 Trinidad and Tobago</option>
+                <option>🇹🇳 Tunisia</option>
+                <option>🇹🇷 Turkey</option>
+                <option>🇹🇲 Turkmenistan</option>
+                <option>🇹🇻 Tuvalu</option>
+                <option>🇺🇬 Uganda</option>
+                <option>🇺🇦 Ukraine</option>
+                <option>🇦🇪 United Arab Emirates</option>
+                <option>🇬🇧 United Kingdom</option>
+                <option>🇺🇸 United States</option>
+                <option>🇺🇾 Uruguay</option>
+                <option>🇺🇿 Uzbekistan</option>
+                <option>🇻🇺 Vanuatu</option>
+                <option>🇻🇦 Vatican City</option>
+                <option>🇻🇪 Venezuela</option>
+                <option>🇻🇳 Vietnam</option>
+                <option>🇾🇪 Yemen</option>
+                <option>🇿🇲 Zambia</option>
+                <option>🇿🇼 Zimbabwe</option>
+              </select>
+            </div>
+
+            <button class="slide1-continue" id="slide1-next" disabled>CONTINUE &#x203A;</button>
+          </div>
+        </div>
+
+        <!-- ── SLIDE 2: All intake questions (single scrollable page) ── -->
+        <div class="slide" id="slide-2">
+          <div class="mcq-body-wrap">
+          <div class="mcq-scroll">
+          <div class="mcq-inner">
+            <!-- Q1: Niche -->
+            <div class="mcq-block" id="mcq-q1">
+              <div class="mcq-header">
+                <div class="mcq-num">1</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Your Niche</div>
+                  <button class="mcq-info-btn" data-tooltip="q1">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q1"><div class="mcq-tooltip-inner">What space are you in? Just the broad category.</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills" id="q1-cat-pills">
+                <div class="pill" data-cat="Health">Health</div>
+                <div class="pill" data-cat="Wealth">Wealth</div>
+                <div class="pill" data-cat="Wellness">Wellness</div>
+              </div>
+              <div class="mcq-sublayer" id="q1-sublayer">
+                <div class="mcq-sublayer-label">Subcategory</div>
+                <div class="pills" id="q1-sub-pills"></div>
+                <div class="mcq-other-input" id="q1-other">
+                  <input type="text" placeholder="Describe your niche...">
+                </div>
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q2: Fulfillment -->
+            <div class="mcq-block" id="mcq-q2">
+              <div class="mcq-header">
+                <div class="mcq-num">2</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Fulfillment Model</div>
+                  <button class="mcq-info-btn" data-tooltip="q2">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q2"><div class="mcq-tooltip-inner">How do your clients actually get the result? Whether you do it for them, walk them through it, or hand them the playbook.</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills" data-field="fulfillment_model">
+                <div class="pill" data-value="Done-for-you">Done-for-you</div>
+                <div class="pill" data-value="Done-with-you">Done-with-you</div>
+                <div class="pill" data-value="Do-it-yourself">Do-it-yourself</div>
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q3: Price Point -->
+            <div class="mcq-block" id="mcq-q3">
+              <div class="mcq-header">
+                <div class="mcq-num">3</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Main Offer Price Point</div>
+                  <button class="mcq-info-btn" data-tooltip="q3">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q3"><div class="mcq-tooltip-inner">What does someone pay to work with you on your main offer?</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills" data-field="price_point">
+                <div class="pill" data-value="$0–$100">$0–$100</div>
+                <div class="pill" data-value="$100–$1,000">$100–$1,000</div>
+                <div class="pill" data-value="$1,000–$5,000">$1,000–$5,000</div>
+                <div class="pill" data-value="$5,000–$10,000">$5,000–$10,000</div>
+                <div class="pill" data-value="__other__" data-other="true">Other</div>
+              </div>
+              <div class="mcq-other-input" id="q3-other">
+                <input type="text" placeholder="Enter price point..." data-field="price_point">
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q4: Revenue Level -->
+            <div class="mcq-block" id="mcq-q4">
+              <div class="mcq-header">
+                <div class="mcq-num">4</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Monthly Revenue</div>
+                  <button class="mcq-info-btn" data-tooltip="q4">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q4"><div class="mcq-tooltip-inner">Your current average monthly revenue from your coaching business. This helps us calibrate the diagnostic to your stage of growth.</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills" data-field="revenue_level">
+                <div class="pill" data-value="Under $10K">Under $10K</div>
+                <div class="pill" data-value="$10K–$30K">$10K–$30K</div>
+                <div class="pill" data-value="$30K–$50K">$30K–$50K</div>
+                <div class="pill" data-value="$50K–$100K">$50K–$100K</div>
+                <div class="pill" data-value="$100K+">$100K+</div>
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q5: Funnel Type -->
+            <div class="mcq-block" id="mcq-q5">
+              <div class="mcq-header">
+                <div class="mcq-num">5</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Funnel Type</div>
+                  <button class="mcq-info-btn" data-tooltip="q5">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q5"><div class="mcq-tooltip-inner">How do people go from finding out about you to getting on a call? Pick whatever you're currently using.</div></div>
+                <div class="mcq-sublabel">Select all that apply</div>
+              </div>
+              <div class="pills" data-field="funnel_type" data-multi="true">
+                <div class="pill multi" data-value="VSL Funnel">VSL Funnel</div>
+                <div class="pill multi" data-value="Webinar Funnel">Webinar Funnel</div>
+                <div class="pill multi" data-value="Profile Funnel">Profile Funnel</div>
+                <div class="pill multi" data-value="Challenge Funnel">Challenge Funnel</div>
+                <div class="pill multi" data-value="Free Community">Free Community</div>
+                <div class="pill multi" data-value="Momentra">Momentra</div>
+                <div class="pill multi" data-value="None">None</div>
+                <div class="pill multi" data-value="__other__" data-other="true">Other</div>
+              </div>
+              <div class="mcq-other-input" id="q5-other">
+                <input type="text" placeholder="Describe your funnel..." data-field="funnel_type">
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q6: Sales Team -->
+            <div class="mcq-block" id="mcq-q6">
+              <div class="mcq-header">
+                <div class="mcq-num">6</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Sales Team Structure</div>
+                  <button class="mcq-info-btn" data-tooltip="q6">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q6"><div class="mcq-tooltip-inner">Who's involved in closing your deals? Just you, or do you have people handling parts of the sales process?</div></div>
+                <div class="mcq-sublabel">Select all that apply</div>
+              </div>
+              <div class="pills" data-field="sales_team" data-multi="true">
+                <div class="pill multi" data-value="Setter">Setter</div>
+                <div class="pill multi" data-value="Closer">Closer</div>
+                <div class="pill multi" data-value="Dialer">Dialer</div>
+                <div class="pill multi" data-value="Manager">Manager</div>
+                <div class="pill multi" data-value="Agency">Agency</div>
+                <div class="pill multi" data-value="Full Cycle Rep">Full Cycle Rep</div>
+                <div class="pill multi" data-value="None" data-exclusive="true">None</div>
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q7: Paid Ads -->
+            <div class="mcq-block" id="mcq-q7">
+              <div class="mcq-header">
+                <div class="mcq-num">7</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Paid Advertising</div>
+                  <button class="mcq-info-btn" data-tooltip="q7">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q7"><div class="mcq-tooltip-inner">Are you running paid ads right now on any channel?</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills" data-field="paid_advertising">
+                <div class="pill" data-value="Yes">Yes</div>
+                <div class="pill" data-value="No">No</div>
+              </div>
+              <div class="mcq-sublayer" id="q7-adspend">
+                <div class="mcq-sublayer-label">Monthly Ad Spend</div>
+                <div class="pills" data-field="ad_spend">
+                  <div class="pill" data-value="$0–$1,000">$0–$1,000</div>
+                  <div class="pill" data-value="$1,000–$5,000">$1,000–$5,000</div>
+                  <div class="pill" data-value="$5,000–$10,000">$5,000–$10,000</div>
+                  <div class="pill" data-value="$10,000–$100,000">$10,000–$100,000</div>
+                  <div class="pill" data-value="__other__" data-other="true">Other</div>
+                </div>
+                <div class="mcq-other-input" id="q7-other">
+                  <input type="text" placeholder="Enter monthly ad spend..." data-field="ad_spend">
+                </div>
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q8: YouTube -->
+            <div class="mcq-block" id="mcq-q8">
+              <div class="mcq-header">
+                <div class="mcq-num">8</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">YouTube</div>
+                  <button class="mcq-info-btn" data-tooltip="q8">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q8"><div class="mcq-tooltip-inner">If you're on YouTube, roughly how big is your channel? Skip this if you're not on the platform.</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills">
+                <div class="pill" data-platform-skip="youtube">Not on YouTube</div>
+              </div>
+              <div class="mcq-sublayer visible" id="q8-layers">
+                <div class="mcq-sublayer-label">Subscribers</div>
+                <div class="pills" data-field="youtube_subscribers">
+                  <div class="pill" data-value="0–1K">0–1K</div>
+                  <div class="pill" data-value="1K–10K">1K–10K</div>
+                  <div class="pill" data-value="10K–100K">10K–100K</div>
+                  <div class="pill" data-value="100K–1M">100K–1M</div>
+                  <div class="pill" data-value="__other__" data-other="true">Other</div>
+                </div>
+                <div class="mcq-other-input" id="q8-subs-other">
+                  <input type="text" placeholder="Subscriber count..." data-field="youtube_subscribers">
+                </div>
+                <div class="mcq-sublayer-label">Monthly Impressions</div>
+                <div class="pills" data-field="youtube_impressions">
+                  <div class="pill" data-value="0–10K">0–10K</div>
+                  <div class="pill" data-value="10K–100K">10K–100K</div>
+                  <div class="pill" data-value="100K–1M">100K–1M</div>
+                  <div class="pill" data-value="1M–10M">1M–10M</div>
+                  <div class="pill" data-value="__other__" data-other="true">Other</div>
+                </div>
+                <div class="mcq-other-input" id="q9-impr-other">
+                  <input type="text" placeholder="Monthly impressions..." data-field="youtube_impressions">
+                </div>
+              </div>
+            </div>
+
+            <div class="mcq-block-divider"></div>
+
+            <!-- Q9: Instagram -->
+            <div class="mcq-block" id="mcq-q9">
+              <div class="mcq-header">
+                <div class="mcq-num">9</div>
+                <div class="mcq-title-row">
+                  <div class="mcq-label">Instagram</div>
+                  <button class="mcq-info-btn" data-tooltip="q9">?</button>
+                </div>
+                <div class="mcq-tooltip" id="tooltip-q9"><div class="mcq-tooltip-inner">If you're on Instagram, roughly how big is your following? Skip this if you're not on the platform.</div></div>
+                <div class="mcq-sublabel">Required</div>
+              </div>
+              <div class="pills">
+                <div class="pill" data-platform-skip="instagram">Not on Instagram</div>
+              </div>
+              <div class="mcq-sublayer visible" id="q9-layers">
+                <div class="mcq-sublayer-label">Followers</div>
+                <div class="pills" data-field="instagram_followers">
+                  <div class="pill" data-value="0–1K">0–1K</div>
+                  <div class="pill" data-value="1K–10K">1K–10K</div>
+                  <div class="pill" data-value="10K–100K">10K–100K</div>
+                  <div class="pill" data-value="100K–1M">100K–1M</div>
+                  <div class="pill" data-value="__other__" data-other="true">Other</div>
+                </div>
+                <div class="mcq-other-input" id="q9-foll-other">
+                  <input type="text" placeholder="Follower count..." data-field="instagram_followers">
+                </div>
+                <div class="mcq-sublayer-label">Monthly Impressions</div>
+                <div class="pills" data-field="instagram_impressions">
+                  <div class="pill" data-value="0–10K">0–10K</div>
+                  <div class="pill" data-value="10K–100K">10K–100K</div>
+                  <div class="pill" data-value="100K–1M">100K–1M</div>
+                  <div class="pill" data-value="1M–10M">1M–10M</div>
+                  <div class="pill" data-value="__other__" data-other="true">Other</div>
+                </div>
+                <div class="mcq-other-input" id="q9-impr-other">
+                  <input type="text" placeholder="Monthly impressions..." data-field="instagram_impressions">
+                </div>
+              </div>
+            </div>
+
+          </div>
+          </div>
+          </div>
+
+          <!-- Submit (outside scroll card) -->
+          <div class="mcq-submit-area">
+            <button class="mcq-submit-btn" id="intake-submit">
+              Continue
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── SLIDE 3: Interview (card-based) ── -->
+        <div class="slide" id="slide-3">
+          <div class="iv-content">
+            <div class="iv-prev-stack" id="iv-prev-stack"></div>
+            <div class="iv-card-wrap">
+              <div class="iv-card" id="iv-card">
+                <!-- Loading state (initial) -->
+                <div class="iv-loading" id="iv-loading">
+                  <div class="loading-spinner"></div>
+                  <span>Analysing your response...</span>
+                </div>
+                <!-- Question state (hidden initially) -->
+                <div id="iv-question-state" style="display:none">
+                  <div class="iv-progress-row">
+                    <div class="iv-ring-group">
+                      <div class="iv-ring">
+                        <svg viewBox="0 0 44 44">
+                          <circle class="iv-ring-bg" cx="22" cy="22" r="20"/>
+                          <circle class="iv-ring-fill" id="iv-ring-fill" cx="22" cy="22" r="20"/>
+                        </svg>
+                        <div class="iv-ring-text" id="iv-ring-text">1/12</div>
+                      </div>
+                    </div>
+                    <div class="iv-ring-label" id="iv-ring-label">Question 1 of 12</div>
+                    <div class="iv-ring-sub" id="iv-ring-sub"></div>
+                    <div class="iv-badge" id="iv-badge"></div>
+                  </div>
+                  <div class="iv-q-text" id="iv-q-text"></div>
+                  <div class="iv-q-context" id="iv-q-context"></div>
+                  <div class="iv-waveform-wrap" id="iv-waveform-wrap">
+                    <canvas id="iv-waveform-canvas"></canvas>
+                  </div>
+                  <div>
+                    <textarea class="iv-textarea" id="iv-textarea" placeholder="Enter your response here..."></textarea>
+                    <div class="iv-meta">
+                      <div class="iv-hint" id="iv-hint">
+                        <span id="iv-hint-text"></span>
+                      </div>
+                      <div class="iv-char-count" id="iv-char-count">0 / 5,000</div>
+                    </div>
+                  </div>
+                  <div class="iv-submit-row">
+                    <button class="iv-back-btn hidden" id="iv-back-btn">
+                      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button class="iv-submit-btn" id="iv-submit-btn">
+                      <span id="iv-btn-label">NEXT QUESTION &#x203A;</span>
+                      <svg id="iv-btn-icon-arrow" style="display:none" viewBox="0 0 24 24"></svg>
+                      <svg id="iv-btn-icon-check" style="display:none" viewBox="0 0 24 24"></svg>
+                    </button>
+                  </div>
+                  <div id="iv-pushback-toast"></div>
+                </div>
+                <!-- Completion state (hidden initially) -->
+                <div id="iv-complete-state" style="display:none">
+                  <div class="iv-complete">
+                    <div class="iv-complete-icon">
+                      <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="iv-complete-title">Interview Complete</div>
+                    <div class="iv-complete-sub">We have everything we need to build your dynamic model.</div>
+                    <div class="iv-complete-btns">
+                      <button class="iv-btn-more" id="iv-btn-more">I have more to add</button>
+                      <button class="iv-btn-generate" id="iv-btn-generate">Generate Dynamic Model</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="iv-shortcut" id="iv-shortcut">
+              Press <kbd>Enter</kbd> to submit &middot; <kbd>Shift + Enter</kbd> for new line
+            </div>
+          </div>
+        </div>
+
+                <!-- ── SLIDE 4: Review (Widget 4 — Dynamic Model Ready) ── -->
+        <div class="slide" id="slide-4" style="position:relative;">
+
+          <canvas class="rv-globe-canvas" id="rv-globe" width="700" height="700"></canvas>
+
+          <div class="review-content">
+            <div class="rv-check-icon" id="rv-check-icon">
+              <svg viewBox="0 0 72 72" width="72" height="72">
+                <circle class="rv-circle-bg" cx="36" cy="36" r="30"/>
+                <circle class="rv-circle-draw" cx="36" cy="36" r="30"/>
+                <polyline class="rv-tick" points="24,37 32,45 48,29"/>
+              </svg>
+            </div>
+
+            <h1 class="rv-title rv-stagger" data-rv-delay="1.3">Your <span>Dynamic Model</span> is Ready</h1>
+
+            <div class="rv-completion-line rv-stagger" data-rv-delay="1.6">
+              <span class="rv-green">12 questions</span>
+              <span class="rv-dot"></span>
+              <span>5 systems assessed</span>
+            </div>
+
+            <div class="rv-divider rv-stagger" data-rv-delay="1.6"></div>
+
+            <button class="rv-btn-primary rv-stagger" data-rv-delay="1.75" id="rv-btn-get-model">
+              GET YOUR DYNAMIC MODEL <span style="font-size:18px">›</span>
+            </button>
+
+            <button class="rv-btn-secondary rv-stagger" data-rv-delay="1.85" id="rv-btn-more-to-add">
+              <span>‹</span> Wait, I have more to add
+            </button>
+          </div>
+
+          <div class="addmore-content rv-hidden" id="addmore-content">
+            <h2 class="addmore-heading">Anything else to add?</h2>
+            <p class="addmore-subtext">Add any extra context that might help us build a more accurate model for you.</p>
+            <textarea class="addmore-textarea" id="addmore-textarea" placeholder="Type anything you think we should know..."></textarea>
+            <button class="addmore-confirm" id="addmore-confirm">I'M DONE ›</button>
+            <button class="addmore-back" id="addmore-back">‹ Never mind, I'm ready</button>
+          </div>
+        </div>
+
+        <!-- ── SLIDE 5: Dynamic Model (Widget 5) ── -->
+        <div class="slide" id="slide-5">
+          <div class="model-loading" id="model-loading">
+            <div class="loading-spinner"></div>
+            <div id="model-loading-text">Generating your dynamic model</div>
+          </div>
+
+          <div class="model-content" id="model-content">
+            <div class="model-body-wrap">
+              <div class="model-body" id="model-body"></div>
+            </div>
+
+            <div class="model-footer">
+              <div class="model-actions" style="justify-content:center; margin-top:12px;">
+                <button class="btn-primary" id="btn-accept" style="max-width:280px;">SEE WHAT'S MISSING ›</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PAGE 3: NEXT STEPS (Sales VSL)
+  ════════════════════════════════════════════════════════════════ -->
+  <div id="next-steps-page" style="display:none;">
+    <div style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;">
+      <div class="post-diag-content">
+
+        <img src="/images/Third_Page.png" alt="This Walkthrough Video Will Explain How To Implement Your Dynamic Model To Hit Six Figures Per Month" class="page-text-image" />
+
+        <!-- SALES PAGE VIDEO: Replace SALES_VIDEO_ID with your Loom video ID -->
+        <!-- Same process: copy Loom share link, grab the ID from the end of the URL -->
+        <div class="post-diag-video" id="cta-video-container">
+          <!-- <iframe src="https://www.loom.com/embed/SALES_VIDEO_ID" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe> -->
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="opacity:0.18"><circle cx="24" cy="24" r="23" stroke="#fff" stroke-width="2"/><polygon points="19,14 19,34 36,24" fill="#fff"/></svg>
+        </div>
+
+        <a class="cta-button" id="discovery-cta" href="https://calendly.com/carbon-consulting/new-meeting" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">BOOK YOUR DISCOVERY CALL</a>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="error-toast"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       JAVASCRIPT
+  ════════════════════════════════════════════════════════════════ -->
+  <script>
+    'use strict';
+
+    // ── State ────────────────────────────────────────────────────────
+    let sessionId = null;
+    let currentSlide = 0;
+    let chatWaitingForResponse = false;
+    let intakeAnswers = {};
+
+    // ── DOM refs ─────────────────────────────────────────────────────
+    const introScreen   = document.getElementById('intro-screen');
+    const landing       = document.getElementById('landing');
+    const widgetWrapper = document.getElementById('widget-wrapper');
+    const landingCta    = document.getElementById('landing-cta');
+    const progressBarWrap = document.getElementById('progress-bar-wrap');
+    const segFills  = [null, document.getElementById('seg-fill-1'), document.getElementById('seg-fill-2'), document.getElementById('seg-fill-3'), document.getElementById('seg-fill-4'), document.getElementById('seg-fill-5')];
+    const segLabels = [null, document.getElementById('seg-label-1'), document.getElementById('seg-label-2'), document.getElementById('seg-label-3'), document.getElementById('seg-label-4'), document.getElementById('seg-label-5')];
+    const nextStepsPage = document.getElementById('next-steps-page');
+
+    // ══════════════════════════════════════════════════════════════════
+    // INTRO + LANDING ENTRANCE
+    // ══════════════════════════════════════════════════════════════════
+
+    const flyInEls = Array.from(document.querySelectorAll('.fly-in'));
+
+    // ── Intro sequence: CSS transitions only, no canvas ──
+    function runIntroSequence() {
+      const introText = document.getElementById('intro-text');
+
+      // Reduced motion — skip everything
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        introScreen.style.display = 'none';
+        landing.style.visibility = 'visible';
+        landing.style.opacity = '1';
+        landing.style.pointerEvents = '';
+        flyInEls.forEach(el => el.classList.add('revealed'));
+        return;
+      }
+
+      // Landing starts hidden behind splash — scaled down, blurred, transparent
+      landing.style.visibility = 'visible';
+      landing.style.opacity = '0';
+      landing.style.transform = 'scale(0.97)';
+      landing.style.filter = 'blur(4px)';
+      landing.style.pointerEvents = 'none';
+
+      // Failsafe: force-reveal everything after 7s no matter what
+      const failsafe = setTimeout(function() {
+        introScreen.style.display = 'none';
+        landing.style.opacity = '1';
+        landing.style.transform = '';
+        landing.style.filter = '';
+        landing.style.pointerEvents = '';
+        flyInEls.forEach(el => {
+          el.style.transition = '';
+          el.classList.add('revealed');
+        });
+      }, 7000);
+
+      // t=0ms: Wordmark fade-in (1.8s CSS transition)
+      requestAnimationFrame(function() {
+        introText.classList.add('intro-visible');
+      });
+
+      // t=2800ms: Start the dramatic exit — Echo arcs expand, wordmark lifts, splash fades
+      setTimeout(function() {
+        introScreen.classList.add('transitioning');
+      }, 2800);
+
+      // t=3600ms (2800+800): Welcome page pushes into focus from behind
+      setTimeout(function() {
+        landing.style.transition = 'opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), filter 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        landing.style.transform = 'scale(1)';
+        landing.style.filter = 'blur(0px)';
+        landing.style.opacity = '1';
+
+        // Cascade fly-in elements top to bottom, 100ms apart
+        flyInEls.forEach(function(el, i) {
+          setTimeout(function() {
+            el.classList.add('revealed');
+          }, i * 100);
+        });
+      }, 3600);
+
+      // t=5000ms (2800+2200): Hide intro screen, cleanup
+      setTimeout(function() {
+        clearTimeout(failsafe);
+        introScreen.style.display = 'none';
+        landing.style.transition = '';
+        landing.style.transform = '';
+        landing.style.filter = '';
+        landing.style.pointerEvents = '';
+        flyInEls.forEach(function(el) {
+          el.classList.add('revealed');
+        });
+      }, 5000);
+    }
+
+    runIntroSequence();
+
+    // ══════════════════════════════════════════════════════════════════
+    // HASH-BASED ROUTING
+    // ══════════════════════════════════════════════════════════════════
+
+    function navigateTo(route) {
+      // Reset all pages — strip transition classes and inline styles
+      landing.classList.remove('welcome-exit');
+      landing.style.display = 'none';
+      landing.style.opacity = '';
+      landing.style.transform = '';
+      landing.style.filter = '';
+      landing.style.pointerEvents = '';
+
+      widgetWrapper.classList.remove('widget1-enter');
+      widgetWrapper.style.display = '';
+      widgetWrapper.style.opacity = '';
+      widgetWrapper.style.transform = '';
+      widgetWrapper.style.filter = '';
+      widgetWrapper.style.pointerEvents = '';
+      widgetWrapper.style.transition = '';
+
+      nextStepsPage.style.display = 'none';
+      nextStepsPage.classList.remove('page-visible');
+
+      switch (route) {
+        case 'diagnostic':
+          // Instant show — no crossfade
+          landing.style.display = 'none';
+          widgetWrapper.style.opacity = '1';
+          widgetWrapper.style.transform = 'scale(1)';
+          widgetWrapper.style.filter = 'blur(0px)';
+          widgetWrapper.style.pointerEvents = 'auto';
+          if (currentSlide === 0) showSlide(1);
+          if (sessionId) {
+            apiFetch('/api/page-track', { method: 'POST', body: { page: 'application' } }).catch(() => {});
+          }
+          break;
+
+        case 'next-steps':
+          widgetWrapper.style.display = 'none';
+          nextStepsPage.style.display = '';
+          nextStepsPage.offsetHeight;
+          nextStepsPage.classList.add('page-visible');
+          updateDots('complete');
+          if (sessionId) {
+            apiFetch('/api/page-track', { method: 'POST', body: { page: 'sales_vsl', status: 'sales_page_reached' } }).catch(() => {});
+          }
+          break;
+
+        default: // landing
+          landing.style.display = '';
+          landing.style.opacity = '1';
+          landing.style.pointerEvents = '';
+          flyInEls.forEach(el => el.classList.add('revealed'));
+          break;
+      }
+    }
+
+    function getRouteFromHash() {
+      const hash = location.hash;
+      if (hash === '#/diagnostic') return 'diagnostic';
+      if (hash === '#/next-steps') return 'next-steps';
+      return 'landing';
+    }
+
+    window.addEventListener('hashchange', () => {
+      navigateTo(getRouteFromHash());
+    });
+
+    // On initial load, if hash is set (e.g. user refreshed on #/diagnostic),
+    // route accordingly — but only after intro sequence completes
+    if (location.hash && location.hash !== '#/') {
+      // Delay to let intro sequence run, then navigate
+      setTimeout(() => {
+        navigateTo(getRouteFromHash());
+      }, 100);
+    }
+
+    // ── Utility: error toast ─────────────────────────────────────────
+    let toastTimer;
+    function showError(msg) {
+      const toast = document.getElementById('error-toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+    }
+
+    // ── Utility: fetch wrapper ───────────────────────────────────────
+    async function apiFetch(url, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+      if (sessionId) headers['X-Session-ID'] = sessionId;
+      const res = await fetch(url, {
+        ...options,
+        headers,
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const code = data.code || '';
+        if (code === 'SESSION_EXPIRED') throw new Error('SESSION_EXPIRED');
+        throw new Error(data.error || data.message || 'Request failed');
+      }
+      return data;
+    }
+
+    // ── Utility: fire-and-forget tracking ──────────────────────────────
+    function trackStatus(status) {
+      if (!sessionId) return;
+      apiFetch('/api/page-track', { method: 'POST', body: { status } }).catch(() => {});
+    }
+    function trackVsl(video, percent) {
+      if (!sessionId) return;
+      apiFetch('/api/track-vsl', { method: 'POST', body: { video, percent } }).catch(() => {});
+    }
+
+    async function apiStreamChat(body) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (sessionId) headers['X-Session-ID'] = sessionId;
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.code === 'SESSION_EXPIRED') throw new Error('SESSION_EXPIRED');
+        throw new Error(data.error || 'Request failed');
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+      let result = null;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const parsed = JSON.parse(line.slice(6));
+          if (parsed.type === 'delta') {
+            fullText += parsed.text;
+          } else if (parsed.type === 'done') {
+            result = parsed;
+          } else if (parsed.type === 'error') {
+            throw new Error(parsed.error || 'Request failed');
+          }
+        }
+      }
+      if (!result) result = { response: fullText };
+      return result;
+    }
+
+    // ── Segmented progress bar ─────────────────────────────────────
+    // Seg 1: Slide 1 — personal info
+    // Seg 2: Slides 2–9 — MCQ questions (progressive, 8 steps)
+    // Seg 3: Slide 10 — interview / deep dive (progressive, 12 turns)
+    // Seg 4: Dynamic model ready screen
+    // Seg 5: Dynamic model display (slide 5)
+    // CTA / completion: bar hides
+
+    const TOTAL_SEGMENTS = 5;
+    const EXPECTED_CHAT_TURNS = 12;
+    let chatTurnCount = 0;
+    let currentActiveSeg = 0;
+
+    function setSegState(segIndex, state, pct) {
+      const fill  = segFills[segIndex];
+      const label = segLabels[segIndex];
+      fill.classList.remove('active', 'complete', 'pulse');
+      label.classList.remove('active', 'complete');
+
+      if (state === 'complete') {
+        fill.classList.add('complete');
+        label.classList.add('complete');
+      } else if (state === 'active') {
+        fill.classList.add('active');
+        fill.style.width = Math.min(Math.max(pct, 0), 100) + '%';
+        label.classList.add('active');
+        void fill.offsetWidth;
+        fill.classList.add('pulse');
+      } else {
+        fill.style.width = '0%';
+      }
+    }
+
+    function updateSegments(activeSeg, fillPct) {
+      currentActiveSeg = activeSeg;
+      for (let i = 1; i <= TOTAL_SEGMENTS; i++) {
+        if (i < activeSeg)       setSegState(i, 'complete', 100);
+        else if (i === activeSeg) setSegState(i, 'active', fillPct);
+        else                      setSegState(i, 'inactive', 0);
+      }
+    }
+
+    function updateDot3() {
+      const pct = Math.min((chatTurnCount / EXPECTED_CHAT_TURNS) * 100, 100);
+      updateSegments(3, pct);
+    }
+
+    function updateDots(activeSlide) {
+      if (activeSlide === 'complete') {
+        progressBarWrap.classList.add('hidden');
+        return;
+      }
+      progressBarWrap.classList.remove('hidden');
+
+      if (activeSlide === 1) {
+        updateSegments(1, 5);
+      } else if (activeSlide === 2) {
+        updateSegments(2, 5);
+      } else if (activeSlide === 3) {
+        updateDot3();
+      } else if (activeSlide === 4) {
+        updateSegments(4, 100);
+      } else if (activeSlide === 5) {
+        updateSegments(5, 100);
+      }
+    }
+
+    // ── Utility: show slide ──────────────────────────────────────────
+    let slideTransitioning = false;
+
+    function showSlide(n) {
+      var incoming = document.getElementById('slide-' + n);
+      var current = currentSlide ? document.getElementById('slide-' + currentSlide) : null;
+
+      // If there's a visible slide to exit, crossfade it
+      if (current && current !== incoming && !slideTransitioning) {
+        slideTransitioning = true;
+
+        // Suppress any internal entrance animations on the incoming
+        // slide so they don't compete with the slide crossfade
+        var innerAnimated = incoming.querySelectorAll('.entering');
+        innerAnimated.forEach(function(el) { el.style.animation = 'none'; });
+
+        // Prepare incoming: render it in the DOM at opacity 0
+        incoming.style.transition = 'none';
+        incoming.style.opacity = '0';
+        incoming.classList.add('active');
+        incoming.offsetHeight; // force layout so browser renders it
+
+        // Now enable transitions and start both fades simultaneously
+        incoming.style.transition = '';
+
+        // Outgoing fades out immediately
+        current.classList.add('slide-exiting');
+
+        // Incoming fades in after 150ms stagger
+        setTimeout(function() {
+          incoming.style.opacity = '';
+        }, 150);
+
+        currentSlide = n;
+        updateDots(n);
+
+        // Clean up after full transition completes
+        setTimeout(function() {
+          current.classList.remove('active', 'slide-exiting');
+          innerAnimated.forEach(function(el) { el.style.animation = ''; });
+          slideTransitioning = false;
+        }, 600);
+      } else {
+        // No current slide or same slide — show immediately
+        document.querySelectorAll('.slide').forEach(function(s) {
+          s.classList.remove('active', 'slide-exiting');
+        });
+        incoming.style.opacity = '0';
+        incoming.classList.add('active');
+        incoming.offsetHeight;
+        incoming.style.opacity = '';
+        currentSlide = n;
+        updateDots(n);
+      }
+    }
+
+    // ── Landing → Widget transition (crossfade) ─────────────────────
+    function launchWidget() {
+      // Suppress slide-1's own entrance animation so it doesn't
+      // compete with the crossfade
+      var slide1 = document.getElementById('slide-1');
+      slide1.classList.add('no-animate');
+
+      // Show slide 1 inside the widget (widget is rendered but
+      // invisible via opacity:0 / scale:0.97 / blur:4px)
+      if (currentSlide === 0) showSlide(1);
+
+      // Force reflow so browser registers the initial hidden state
+      widgetWrapper.offsetHeight;
+
+      // Add transition classes to both — welcome recedes, widget approaches
+      landing.classList.add('welcome-exit');
+      widgetWrapper.classList.add('widget1-enter');
+
+      // After transition completes (0.6s + 0.25s delay + buffer)
+      setTimeout(function() {
+        landing.style.display = 'none';
+        history.replaceState(null, '', '#/diagnostic');
+
+        // Track page view
+        if (sessionId) {
+          apiFetch('/api/page-track', { method: 'POST', body: { page: 'application' } }).catch(() => {});
+        }
+      }, 900);
+    }
+
+    landingCta.addEventListener('click', launchWidget);
+
+    // ══════════════════════════════════════════════════════════════════
+    // SLIDE 1 — Contact
+    // ══════════════════════════════════════════════════════════════════
+
+    const slide1Next = document.getElementById('slide1-next');
+
+    function checkSlide1Valid() {
+      const nameFilled    = document.getElementById('full-name').value.trim() !== '';
+      const emailFilled   = document.getElementById('email').value.trim() !== '';
+      const igFilled      = document.getElementById('instagram').value.trim() !== '';
+      slide1Next.disabled = !(nameFilled && emailFilled && igFilled);
+    }
+
+    ['full-name', 'email', 'instagram'].forEach(id => {
+      document.getElementById(id).addEventListener('input', checkSlide1Valid);
+    });
+
+    // ── Slide 1 field validation ────────────────────────────────────
+    function validateName(name) {
+      const parts = name.split(/\s+/).filter(p => p.length > 0);
+      if (parts.length < 2) return 'Please enter your first and last name.';
+      if (!/^[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF' -]+$/.test(name))
+        return "Hmm, that name doesn't look right.";
+      return null;
+    }
+
+    function validateEmail(email) {
+      const basic = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!basic.test(email)) return "That doesn't look like a valid email.";
+      const domain = email.split('@')[1].toLowerCase();
+      const parts = domain.split('.');
+      const tld = parts[parts.length - 1];
+      if (tld.length < 2 || !/^[a-z]{2,}$/.test(tld))
+        return "Hmm, that email doesn't look right.";
+      const local = email.split('@')[0];
+      if (/^[^a-zA-Z0-9]*$/.test(local) || local.length < 2)
+        return "Hmm, that email doesn't look right.";
+      return null;
+    }
+
+    function validateInstagram(handle) {
+      const clean = handle.replace(/^@/, '');
+      if (clean.length < 1) return 'Please enter your Instagram handle.';
+      if (!/^[a-zA-Z0-9._]{1,30}$/.test(clean))
+        return "That doesn't look like a valid Instagram handle.";
+      return null;
+    }
+
+    slide1Next.addEventListener('click', async () => {
+      slide1Next.disabled = true;
+
+      const fullName        = document.getElementById('full-name').value.trim();
+      const email           = document.getElementById('email').value.trim();
+      const instagramHandle = document.getElementById('instagram').value.trim();
+      const country         = document.getElementById('country').value || null;
+
+      // Validate fields
+      const nameErr  = validateName(fullName);
+      const emailErr = validateEmail(email);
+      const igErr    = validateInstagram(instagramHandle);
+      const firstError = nameErr || emailErr || igErr;
+
+      if (firstError) {
+        showError(firstError);
+        slide1Next.disabled = false;
+        return;
+      }
+
+      const referralSource = new URLSearchParams(window.location.search).get('ref') || '';
+
+      try {
+        const data = await apiFetch('/api/session/start', {
+          method: 'POST',
+          body: { contact: { fullName, email, instagramHandle, country }, referralSource }
+        });
+        sessionId = data.sessionId;
+        showSlide(2);
+      } catch (err) {
+        showError(err.message === 'SESSION_EXPIRED'
+          ? 'Your session has expired. Please refresh to start over.'
+          : 'Something went wrong. Please try again.');
+        slide1Next.disabled = false;
+      }
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // SLIDE 2 — Intake (single scrollable page, all 8 questions)
+    // ══════════════════════════════════════════════════════════════════
+
+    let selectedNicheCategory = null;
+    const platformOptedOut = { youtube: false, instagram: false };
+    const mcqSubmitBtn = document.getElementById('intake-submit');
+
+    // ── Info tooltip toggle ──
+    document.querySelectorAll('.mcq-info-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = 'tooltip-' + btn.dataset.tooltip;
+        const tooltip = document.getElementById(id);
+        const isOpen = tooltip.classList.contains('open');
+
+        // Close all tooltips and deactivate all buttons
+        document.querySelectorAll('.mcq-tooltip.open').forEach(t => t.classList.remove('open'));
+        document.querySelectorAll('.mcq-info-btn.active').forEach(b => b.classList.remove('active'));
+
+        // Toggle this one if it wasn't already open
+        if (!isOpen) {
+          tooltip.classList.add('open');
+          btn.classList.add('active');
+        }
+      });
+    });
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.mcq-tooltip.open').forEach(t => t.classList.remove('open'));
+      document.querySelectorAll('.mcq-info-btn.active').forEach(b => b.classList.remove('active'));
+    });
+
+    // ── Utility: mark a question block answered and animate ──
+    function markAnswered(qId, answered) {
+      const block = document.getElementById('mcq-' + qId);
+      if (!block) return;
+      if (answered) {
+        block.classList.add('answered');
+        if (!block.classList.contains('was-answered')) {
+          block.classList.add('just-answered', 'was-answered');
+          setTimeout(() => block.classList.remove('just-answered'), 300);
+        }
+      } else {
+        block.classList.remove('answered', 'was-answered');
+      }
+      updateSubmitBtn();
+    }
+
+    // ── Utility: check if all required fields are filled ──
+    function updateSubmitBtn() {
+      const ytDone = platformOptedOut.youtube || intakeAnswers.youtube_subscribers;
+      const igDone = platformOptedOut.instagram || intakeAnswers.instagram_followers;
+      const adSpendDone = intakeAnswers.paid_advertising !== 'Yes' || intakeAnswers.ad_spend;
+      const required = intakeAnswers.niche_category
+        && intakeAnswers.niche_subcategory
+        && intakeAnswers.fulfillment_model
+        && intakeAnswers.price_point
+        && intakeAnswers.revenue_level
+        && intakeAnswers.funnel_type && intakeAnswers.funnel_type.length > 0
+        && intakeAnswers.sales_team && intakeAnswers.sales_team.length > 0
+        && intakeAnswers.paid_advertising
+        && adSpendDone
+        && ytDone && igDone;
+      mcqSubmitBtn.classList.toggle('active', !!required);
+    }
+
+    // ── Utility: pill pop animation ──
+    function popPill(el) {
+      el.classList.add('just-selected');
+      setTimeout(() => el.classList.remove('just-selected'), 200);
+    }
+
+    // ── Q1: Niche cascading picker ──
+    const NICHE_SUBS = {
+      Health: ['Bodybuilding','Weight Loss','Powerlifting','Athleticism','Nutrition','Sports','Optimization','Recovery','Mobility','Hormones','Longevity','Rehab','Other'],
+      Wealth: ['Ecommerce','Trading','Investing','Real Estate','Agency','Sales','Affiliate','Personal Branding','Freelancing','Reselling','Arbitrage','Scaling','Coaching','Team','Other'],
+      Wellness: ['Mindset','Relationships','Spirituality','Religion','Personal Development','Communication','Leadership','Travel','Parenting','Productivity','Confidence','Sobriety','Other']
+    };
+
+    document.querySelectorAll('#q1-cat-pills .pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const cat = pill.dataset.cat;
+        const sublayer = document.getElementById('q1-sublayer');
+        const subPills = document.getElementById('q1-sub-pills');
+        const otherWrap = document.getElementById('q1-other');
+
+        // Toggle off if re-clicking same category
+        if (selectedNicheCategory === cat) {
+          selectedNicheCategory = null;
+          pill.classList.remove('selected');
+          sublayer.classList.remove('visible');
+          delete intakeAnswers.niche_category;
+          delete intakeAnswers.niche_subcategory;
+          markAnswered('q1', false);
+          return;
+        }
+
+        // Select category
+        document.querySelectorAll('#q1-cat-pills .pill').forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+        popPill(pill);
+        selectedNicheCategory = cat;
+        intakeAnswers.niche_category = cat;
+        delete intakeAnswers.niche_subcategory;
+
+        // Build subcategory pills
+        subPills.innerHTML = '';
+        otherWrap.classList.remove('visible');
+        NICHE_SUBS[cat].forEach(sub => {
+          const p = document.createElement('div');
+          p.className = 'pill';
+          p.textContent = sub;
+          p.dataset.value = sub === 'Other' ? '__other__' : sub;
+          if (sub === 'Other') p.dataset.other = 'true';
+          p.addEventListener('click', () => selectSubNiche(p));
+          subPills.appendChild(p);
+        });
+        sublayer.classList.add('visible');
+        markAnswered('q1', false);
+      });
+    });
+
+    function selectSubNiche(el) {
+      document.querySelectorAll('#q1-sub-pills .pill').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      popPill(el);
+      const otherWrap = document.getElementById('q1-other');
+      if (el.dataset.other) {
+        otherWrap.classList.add('visible');
+        otherWrap.querySelector('input').value = '';
+        otherWrap.querySelector('input').focus();
+        delete intakeAnswers.niche_subcategory;
+        markAnswered('q1', false);
+      } else {
+        otherWrap.classList.remove('visible');
+        intakeAnswers.niche_subcategory = el.dataset.value;
+        markAnswered('q1', true);
+      }
+    }
+
+    document.querySelector('#q1-other input').addEventListener('input', function() {
+      const val = this.value.trim();
+      if (val) { intakeAnswers.niche_subcategory = val; markAnswered('q1', true); }
+      else { delete intakeAnswers.niche_subcategory; markAnswered('q1', false); }
+    });
+
+    // ── Q2-Q6: Standard single-select and multi-select pills ──
+    document.querySelectorAll('#slide-2 .pills[data-field]').forEach(pillGroup => {
+      const field = pillGroup.dataset.field;
+      const isMulti = pillGroup.dataset.multi === 'true';
+      const block = pillGroup.closest('.mcq-block');
+      const qId = block ? block.id.replace('mcq-', '') : null;
+
+      pillGroup.querySelectorAll('.pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          const val = pill.dataset.value;
+
+          // "Other" trigger
+          if (pill.dataset.other) {
+            pillGroup.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+            pill.classList.add('selected');
+            popPill(pill);
+            const otherWrap = block.querySelector('.mcq-other-input');
+            if (otherWrap) {
+              otherWrap.classList.add('visible');
+              const inp = otherWrap.querySelector('input');
+              inp.value = '';
+              inp.focus();
+            }
+            intakeAnswers[field] = '';
+            if (qId) markAnswered(qId, false);
+            return;
+          }
+
+          // Hide other input
+          const otherWrap = block ? block.querySelector('.mcq-other-input') : null;
+          if (otherWrap) { otherWrap.classList.remove('visible'); }
+
+          if (isMulti) {
+            const isExclusive = pill.dataset.exclusive === 'true';
+            if (isExclusive) {
+              pillGroup.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+              pill.classList.add('selected');
+            } else {
+              pillGroup.querySelector('.pill[data-exclusive]')?.classList.remove('selected');
+              pill.classList.toggle('selected');
+            }
+            popPill(pill);
+            const selected = Array.from(pillGroup.querySelectorAll('.pill.selected')).map(p => p.dataset.value);
+            intakeAnswers[field] = selected;
+            if (qId) markAnswered(qId, selected.length > 0);
+          } else {
+            pillGroup.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+            pill.classList.add('selected');
+            popPill(pill);
+            intakeAnswers[field] = val;
+            if (qId) markAnswered(qId, true);
+          }
+        });
+      });
+    });
+
+    // ── Q7: Show/hide ad spend sublayer based on paid_advertising answer ──
+    document.querySelectorAll('.pills[data-field="paid_advertising"] .pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const adSpendLayer = document.getElementById('q7-adspend');
+        if (pill.dataset.value === 'Yes') {
+          adSpendLayer.classList.add('visible');
+        } else {
+          adSpendLayer.classList.remove('visible');
+          // Clear ad spend selection
+          adSpendLayer.querySelectorAll('.pill.selected').forEach(p => p.classList.remove('selected'));
+          adSpendLayer.querySelectorAll('.mcq-other-input').forEach(w => w.classList.remove('visible'));
+          delete intakeAnswers.ad_spend;
+        }
+        updateSubmitBtn();
+      });
+    });
+
+    // ── Other text inputs (for Q3, Q4, platform sub-fields) ──
+    document.querySelectorAll('#slide-2 .mcq-other-input input').forEach(input => {
+      input.addEventListener('input', function() {
+        const field = this.dataset.field;
+        const val = this.value.trim();
+        if (field) {
+          intakeAnswers[field] = val;
+          const block = this.closest('.mcq-block');
+          const qId = block ? block.id.replace('mcq-', '') : null;
+          if (qId) markAnswered(qId, !!val);
+        }
+      });
+    });
+
+    // ── Q7/Q8: Platform skip toggle ──
+    document.querySelectorAll('[data-platform-skip]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const platform = pill.dataset.platformSkip;
+        const layers = document.getElementById(platform === 'youtube' ? 'q8-layers' : 'q9-layers');
+        pill.classList.toggle('selected');
+        popPill(pill);
+
+        if (pill.classList.contains('selected')) {
+          platformOptedOut[platform] = true;
+          layers.classList.remove('visible');
+          // Clear selections
+          layers.querySelectorAll('.pill.selected').forEach(p => p.classList.remove('selected'));
+          layers.querySelectorAll('.mcq-other-input').forEach(w => w.classList.remove('visible'));
+          if (platform === 'youtube') {
+            delete intakeAnswers.youtube_subscribers;
+            delete intakeAnswers.youtube_impressions;
+          } else {
+            delete intakeAnswers.instagram_followers;
+            delete intakeAnswers.instagram_impressions;
+          }
+        } else {
+          platformOptedOut[platform] = false;
+          layers.classList.add('visible');
+        }
+        updateSubmitBtn();
+      });
+    });
+
+    // ── Submit all answers ──
+    mcqSubmitBtn.addEventListener('click', async () => {
+      if (!mcqSubmitBtn.classList.contains('active')) return;
+
+      mcqSubmitBtn.classList.remove('active');
+
+      const payload = {
+        niche: { category: intakeAnswers.niche_category, subcategory: intakeAnswers.niche_subcategory },
+        fulfillment_model: intakeAnswers.fulfillment_model,
+        price_point: intakeAnswers.price_point,
+        revenue_level: intakeAnswers.revenue_level,
+        funnel_type: intakeAnswers.funnel_type,
+        sales_team: intakeAnswers.sales_team || [],
+        paid_advertising: intakeAnswers.paid_advertising,
+        ad_spend: intakeAnswers.ad_spend || null,
+      };
+
+      if (intakeAnswers.youtube_subscribers && !platformOptedOut.youtube) {
+        payload.youtube = {
+          subscribers: intakeAnswers.youtube_subscribers,
+          monthly_impressions: intakeAnswers.youtube_impressions || null,
+        };
+      }
+      if (intakeAnswers.instagram_followers && !platformOptedOut.instagram) {
+        payload.instagram = {
+          followers: intakeAnswers.instagram_followers,
+          monthly_impressions: intakeAnswers.instagram_impressions || null,
+        };
+      }
+
+      try {
+        await apiFetch('/api/intake', { method: 'POST', body: { answers: payload } });
+        showSlide(3);
+        initChat();
+      } catch (err) {
+        console.error('Intake submit error:', err);
+        showError(err.message === 'SESSION_EXPIRED'
+          ? 'Your session has expired. Please refresh to start over.'
+          : 'Something went wrong. Please try again.');
+        mcqSubmitBtn.classList.add('active');
+      }
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // SLIDE 3 — Interview (card-based, one question at a time)
+    // ══════════════════════════════════════════════════════════════════
+
+    const ivCard           = document.getElementById('iv-card');
+    const ivLoading        = document.getElementById('iv-loading');
+    const ivQuestionState  = document.getElementById('iv-question-state');
+    const ivCompleteState  = document.getElementById('iv-complete-state');
+    const ivPrevStack      = document.getElementById('iv-prev-stack');
+    const ivRingFill       = document.getElementById('iv-ring-fill');
+    const ivRingText       = document.getElementById('iv-ring-text');
+    const ivRingLabel      = document.getElementById('iv-ring-label');
+    const ivRingSub        = document.getElementById('iv-ring-sub');
+    const ivBadge          = document.getElementById('iv-badge');
+    const ivQText          = document.getElementById('iv-q-text');
+    const ivQContext        = document.getElementById('iv-q-context');
+    const ivTextarea       = document.getElementById('iv-textarea');
+    const ivCharCount      = document.getElementById('iv-char-count');
+    const ivHintText       = document.getElementById('iv-hint-text');
+    const ivSubmitBtn      = document.getElementById('iv-submit-btn');
+    const ivBtnLabel       = document.getElementById('iv-btn-label');
+    const ivBtnIconArrow   = document.getElementById('iv-btn-icon-arrow');
+    const ivBtnIconCheck   = document.getElementById('iv-btn-icon-check');
+    const ivBackBtn        = document.getElementById('iv-back-btn');
+    const ivShortcut       = document.getElementById('iv-shortcut');
+    const ivPushbackToast  = document.getElementById('iv-pushback-toast');
+    let ivPushbackTimer    = null;
+
+    function showPushback(msg) {
+      ivPushbackToast.textContent = msg;
+      ivPushbackToast.classList.add('show');
+      clearTimeout(ivPushbackTimer);
+      ivPushbackTimer = setTimeout(() => ivPushbackToast.classList.remove('show'), 3000);
+    }
+
+    function hidePushback() {
+      ivPushbackToast.classList.remove('show');
+      clearTimeout(ivPushbackTimer);
+    }
+
+    let ivCurrentQ = 0;
+    let ivTotalQ = 12;
+    let ivPrevAnswers = [];
+    let ivPendingAnswer = null;
+    let ivIsLoading = false;
+    let ivLastAiResponse = '';
+    let ivCurrentLabel = '';
+
+    // ── Reactive Waveform (all deep dive questions) ──────────────────
+    const ivWaveCanvas = document.getElementById('iv-waveform-canvas');
+    const ivWaveCtx = ivWaveCanvas.getContext('2d');
+    let ivWaveAnimId = null;
+    let waveTime = 0;
+    let waveTargetEnergy = 0;
+    let waveEnergy = 0;
+    const waveBars = 64;
+    const waveBarValues = new Float32Array(waveBars);
+
+    function resizeWaveCanvas() {
+      const wrap = document.getElementById('iv-waveform-wrap');
+      const rect = wrap.getBoundingClientRect();
+      ivWaveCanvas.width = rect.width * (window.devicePixelRatio || 1);
+      ivWaveCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      ivWaveCtx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+    }
+
+    function drawWaveform() {
+      waveTime += 0.02;
+      waveTargetEnergy *= 0.92;
+      waveEnergy += (waveTargetEnergy - waveEnergy) * 0.15;
+
+      const cw = ivWaveCanvas.width / (window.devicePixelRatio || 1);
+      const ch = ivWaveCanvas.height / (window.devicePixelRatio || 1);
+      ivWaveCtx.clearRect(0, 0, cw, ch);
+
+      const centerY = ch / 2;
+      const barW = (cw / waveBars) * 0.7;
+      const barPad = (cw / waveBars) * 0.15;
+
+      // Center line
+      ivWaveCtx.strokeStyle = 'rgba(165,226,44,' + (0.04 + waveEnergy * 0.12) + ')';
+      ivWaveCtx.lineWidth = 0.5;
+      ivWaveCtx.beginPath();
+      ivWaveCtx.moveTo(0, centerY);
+      ivWaveCtx.lineTo(cw, centerY);
+      ivWaveCtx.stroke();
+
+      // Bars
+      for (let i = 0; i < waveBars; i++) {
+        const centerFactor = 1 - Math.abs(i - waveBars / 2) / (waveBars / 2) * 0.4;
+        const baseWave = Math.sin(waveTime * 1.5 + i * 0.15) * 0.08 +
+                         Math.sin(waveTime * 0.8 + i * 0.08) * 0.05;
+        const energyWave = waveEnergy * (
+          Math.sin(waveTime * 4 + i * 0.25) * 0.4 +
+          Math.sin(waveTime * 2.5 + i * 0.18) * 0.3 +
+          Math.sin(waveTime * 6 + i * 0.4) * 0.15
+        );
+        const target = Math.abs(baseWave + energyWave) * centerFactor;
+        waveBarValues[i] += (target - waveBarValues[i]) * 0.2;
+
+        const val = waveBarValues[i];
+        const barH = val * ch * 0.8;
+        const alpha = Math.min(0.5, 0.04 + val * 0.15 + waveEnergy * val * 0.3);
+        const x = i * (cw / waveBars) + barPad;
+
+        ivWaveCtx.fillStyle = 'rgba(165,226,44,' + alpha + ')';
+        // Top half (extends up)
+        if (barH > 0.5) {
+          ivWaveCtx.beginPath();
+          ivWaveCtx.roundRect(x, centerY - barH, barW, barH, [2, 2, 0, 0]);
+          ivWaveCtx.fill();
+          // Bottom half (mirror)
+          ivWaveCtx.beginPath();
+          ivWaveCtx.roundRect(x, centerY, barW, barH, [0, 0, 2, 2]);
+          ivWaveCtx.fill();
+        }
+      }
+
+      ivWaveAnimId = requestAnimationFrame(drawWaveform);
+    }
+
+    function startWaveform() {
+      if (ivWaveAnimId) return;
+      resizeWaveCanvas();
+      ivWaveAnimId = requestAnimationFrame(drawWaveform);
+    }
+    function stopWaveform() {
+      if (ivWaveAnimId) { cancelAnimationFrame(ivWaveAnimId); ivWaveAnimId = null; }
+    }
+
+    // Waveform reacts to typing
+    ivTextarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        waveTargetEnergy = Math.min(1, waveTargetEnergy + 0.15);
+      } else if (e.key.length === 1) {
+        waveTargetEnergy = Math.min(1, waveTargetEnergy + 0.3);
+      }
+    });
+
+    window.addEventListener('resize', function() {
+      if (ivWaveAnimId) resizeWaveCanvas();
+    });
+
+    function getQuestionCopy(num) {
+      if (num === 1) return { label: 'Opportunities', fallbackQ: 'What are the biggest opportunities you see in your business right now? Where do you feel the most upside potential?', context: 'Knowing where you see upside tells us which systems to prioritize.', placeholder: 'Enter your response here...', hint: 'A few sentences is ideal', badge: 'Standardised' };
+      if (num === 2) return { label: 'Challenges', fallbackQ: 'What are the biggest challenges or bottlenecks you\'re currently facing? What feels like it\'s holding you back the most?', context: 'The gaps you feel day-to-day are usually the fastest path to a diagnosis.', placeholder: 'Enter your response here...', hint: 'A few sentences is ideal', badge: 'Standardised' };
+      if (num === 3) return { label: 'Strategies', fallbackQ: 'What strategies or changes have you already tried to address these challenges? What worked and what didn\'t?', context: "What you've already tried tells us as much as what you haven't.", placeholder: 'Enter your response here...', hint: 'A few sentences is ideal', badge: 'Standardised' };
+      return {
+        label: ivCurrentLabel || 'Deep Dive ' + ivCurrentQ,
+        fallbackQ: '',
+        context: 'Specifics here sharpen the dynamic model. Generalities produce generic advice.',
+        placeholder: 'Enter your response here...',
+        hint: num <= 8 ? 'Be as specific as you can' : 'Nearly there \u2014 detail matters most now',
+        badge: 'Diagnostic'
+      };
+    }
+
+    function extractLabel(text) {
+      const match = text.match(/\[LABEL:(\w+)\]\s*$/);
+      if (match) return match[1];
+      return '';
+    }
+
+    function stripLabel(text) {
+      return text.replace(/\s*\[LABEL:\w+\]\s*$/, '');
+    }
+
+    function ivUpdateCard() {
+      const copy = getQuestionCopy(ivCurrentQ);
+      const isLast = ivCurrentQ >= ivTotalQ;
+
+      // Progress ring (r=20, circumference = 2π×20 ≈ 125.66 → rounded to 126)
+      const circumference = 126;
+      const offset = circumference - (circumference * ivCurrentQ / ivTotalQ);
+      ivRingFill.style.strokeDasharray = circumference;
+      ivRingFill.style.strokeDashoffset = offset;
+      ivRingText.textContent = ivCurrentQ + '/' + ivTotalQ;
+      ivRingLabel.textContent = 'Question ' + ivCurrentQ + ' of ' + ivTotalQ;
+
+      // Context, placeholder
+      ivQContext.textContent = copy.context;
+      ivTextarea.placeholder = copy.placeholder;
+
+      // Button text
+      if (isLast) {
+        ivBtnLabel.textContent = 'COMPLETE INTERVIEW ›';
+      } else {
+        ivBtnLabel.textContent = 'NEXT QUESTION ›';
+      }
+
+      // Back button visibility — hidden on first question
+      if (ivCurrentQ <= 1) {
+        ivBackBtn.classList.add('hidden');
+      } else {
+        ivBackBtn.classList.remove('hidden');
+      }
+    }
+
+    function ivAddPrevAnswer(num, label, answerText) {
+      const preview = answerText.length > 80 ? answerText.substring(0, 80) + '...' : answerText;
+      const el = document.createElement('div');
+      el.className = 'iv-prev new';
+      el.innerHTML = '<div class="iv-prev-num">' + num + '</div>' +
+        '<div class="iv-prev-q">' + escapeHtml(label) + '</div>' +
+        '<div class="iv-prev-text">' + escapeHtml(preview) + '</div>' +
+        '<div class="iv-prev-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>';
+      ivPrevStack.prepend(el);
+
+      // Fade out oldest items beyond 4 visible
+      const items = ivPrevStack.querySelectorAll('.iv-prev:not(.fading-out)');
+      if (items.length > 4) {
+        const oldest = items[items.length - 1];
+        oldest.classList.add('fading-out');
+        setTimeout(() => oldest.remove(), 350);
+      }
+
+      // Remove animation class after it plays
+      setTimeout(() => el.classList.remove('new'), 450);
+    }
+
+    function ivCheckReviewTrigger(text) {
+      // Hard cap: after 12 questions, always transition to review
+      if (ivCurrentQ >= 12) return true;
+
+      // Safety valve: if the AI response is way too long to be a single
+      // interview question (>400 chars), it likely generated the Dynamic
+      // Model or a multi-paragraph response by mistake — force review
+      if (ivCurrentQ >= 8 && text.length > 400) return true;
+
+      // Before question 10, never trigger review
+      if (ivCurrentQ < 10) return false;
+      // Between 10-11, check if AI is signalling review
+      const lower = text.toLowerCase();
+      return (
+        lower.includes('everything i need') ||
+        lower.includes('ready to generate') ||
+        lower.includes('sufficient information') ||
+        lower.includes('ready to build your dynamic model') ||
+        lower.includes('have enough to work with') ||
+        lower.includes('review') ||
+        lower.includes('add anything') ||
+        lower.includes('remove anything') ||
+        lower.includes('anything else') ||
+        lower.includes('anything i missed')
+      );
+    }
+
+    function ivShowLoading() {
+      ivQuestionState.style.display = 'none';
+      ivCompleteState.style.display = 'none';
+      ivLoading.style.display = 'flex';
+      ivShortcut.style.visibility = 'hidden';
+    }
+
+    function ivShowQuestion(aiResponseHtml, aiResponseRaw) {
+      ivLastAiResponse = aiResponseRaw;
+      ivLoading.style.display = 'none';
+      ivCompleteState.style.display = 'none';
+      ivQuestionState.style.display = 'block';
+      ivShortcut.style.visibility = 'visible';
+
+      // Use AI response if available, otherwise fall back to predefined question text
+      const copy = getQuestionCopy(ivCurrentQ);
+      if (aiResponseHtml && aiResponseHtml.trim()) {
+        ivQText.innerHTML = aiResponseHtml;
+      } else if (copy.fallbackQ) {
+        ivQText.textContent = copy.fallbackQ;
+      }
+      ivUpdateCard();
+
+      // Waveform: all questions
+      startWaveform();
+      waveTargetEnergy = 0;
+
+      // Reset textarea
+      ivTextarea.value = '';
+      ivCharCount.textContent = '0 / 5,000';
+      ivSubmitBtn.classList.remove('active');
+
+      // Animate card in
+      ivCard.classList.remove('entering', 'exiting');
+      void ivCard.offsetHeight;
+      ivCard.classList.add('entering');
+
+      setTimeout(() => ivTextarea.focus(), 50);
+    }
+
+    function ivShowComplete() {
+      ivLoading.style.display = 'none';
+      ivQuestionState.style.display = 'none';
+      ivCompleteState.style.display = 'block';
+      ivShortcut.style.visibility = 'hidden';
+
+      ivCard.classList.remove('entering', 'exiting');
+      void ivCard.offsetHeight;
+      ivCard.classList.add('entering');
+    }
+
+    async function ivSendMessage(payload) {
+      if (ivIsLoading) return;
+      ivIsLoading = true;
+
+      // Animate card out then show loading (skip exit animation if card isn't visible yet)
+      if (ivCard.classList.contains('entering')) {
+        ivCard.classList.remove('entering');
+        ivCard.classList.add('exiting');
+        await new Promise(r => setTimeout(r, 400));
+        ivCard.classList.remove('exiting');
+      }
+
+      ivShowLoading();
+
+      try {
+        const data = await apiStreamChat(payload);
+        console.log('[Deep Dive] API response:', JSON.stringify(data).substring(0, 500));
+        console.log('[Deep Dive] ivCurrentQ:', ivCurrentQ, 'ivTotalQ:', ivTotalQ);
+        if (data.response) {
+          // Check if AI is pushing back on a low-effort answer
+          const isPushback = data.response.startsWith('[PUSHBACK]');
+          const rawResponse = isPushback
+            ? data.response.replace(/^\[PUSHBACK\]\s*/, '')
+            : data.response;
+
+          // Extract and strip the [LABEL:xxx] tag if present
+          const label = extractLabel(rawResponse);
+          const cleanResponse = stripLabel(rawResponse);
+
+          console.log('[Deep Dive] isPushback:', isPushback, 'label:', label);
+          console.log('[Deep Dive] cleanResponse:', cleanResponse.substring(0, 200));
+
+          if (isPushback) {
+            // Don't advance question — show pushback toast and re-show same question
+            console.log('[Deep Dive] PUSHBACK — staying on question', ivCurrentQ);
+            ivPendingAnswer = null;
+            ivShowQuestion(ivLastAiResponse ? renderMarkdown(ivLastAiResponse) : ivQText.innerHTML, ivLastAiResponse || '');
+            showPushback(cleanResponse || 'We need more detail to build an accurate Dynamic Model. Please expand on your answer.');
+          } else {
+            hidePushback();
+            chatTurnCount++;
+            updateDot3();
+
+            // Store the label for the next question card
+            if (label) ivCurrentLabel = label;
+
+            // Commit the previous answer to the stack now that AI accepted it
+            if (ivPendingAnswer) {
+              ivAddPrevAnswer(ivPendingAnswer.number, ivPendingAnswer.label, ivPendingAnswer.answer);
+              ivPrevAnswers.push(ivPendingAnswer);
+              ivPendingAnswer = null;
+            }
+
+            if (ivCheckReviewTrigger(cleanResponse)) {
+              transitionToReview(cleanResponse);
+            } else {
+              ivCurrentQ++;
+              const html = renderMarkdown(cleanResponse);
+              ivShowQuestion(html, cleanResponse);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Deep Dive] ERROR:', err.message, err);
+        // If we have a fallback question (standardised Q1-Q3), show it silently
+        const fallbackNum = ivCurrentQ || 1;
+        const fallbackCopy = getQuestionCopy(fallbackNum);
+        if (fallbackCopy.fallbackQ) {
+          if (ivCurrentQ === 0) ivCurrentQ = 1;
+          ivQText.textContent = fallbackCopy.fallbackQ;
+          ivUpdateCard();
+          ivLoading.style.display = 'none';
+          ivQuestionState.style.display = 'block';
+          ivShortcut.style.visibility = 'visible';
+          // Animate card in
+          ivCard.classList.remove('entering', 'exiting');
+          void ivCard.offsetHeight;
+          ivCard.classList.add('entering');
+          setTimeout(() => ivTextarea.focus(), 50);
+        } else {
+          // No fallback available — show error
+          ivLoading.style.display = 'none';
+          ivQuestionState.style.display = 'block';
+          ivShortcut.style.visibility = 'visible';
+          showError(err.message === 'SESSION_EXPIRED'
+            ? 'Your session has expired. Please refresh to start over.'
+            : 'Something went wrong. Please try again.');
+        }
+      } finally {
+        ivIsLoading = false;
+      }
+    }
+
+    async function initChat() {
+      ivCurrentQ = 0;
+      ivPrevAnswers = [];
+      ivPrevStack.innerHTML = '';
+      ivShowLoading();
+      await ivSendMessage({ message: 'hello' });
+      // Reset chat turn count after the initial hello — the first question
+      // being shown is not progress, only answered questions count
+      chatTurnCount = 0;
+      updateDot3();
+    }
+
+    // Submit button click
+    ivSubmitBtn.addEventListener('click', async () => {
+      if (!ivSubmitBtn.classList.contains('active') || ivIsLoading) return;
+      const text = ivTextarea.value.trim();
+      if (!text) return;
+
+      // Client-side minimum length check — only block very low-effort responses
+      if (text.length < 15) {
+        showPushback('We need a bit more detail to build an accurate Dynamic Model. Try expanding on your answer.');
+        return;
+      }
+      hidePushback();
+
+      // Stage the answer — it will be committed to the stack only if the AI accepts it
+      const copy = getQuestionCopy(ivCurrentQ);
+      ivPendingAnswer = { number: ivCurrentQ, label: copy.label, answer: text, aiResponseRaw: ivLastAiResponse };
+
+      // Clear and send
+      ivTextarea.value = '';
+      ivSubmitBtn.classList.remove('active');
+      ivCharCount.textContent = '0 / 5,000';
+      await ivSendMessage({ message: text });
+    });
+
+    // Textarea input handler
+    ivTextarea.addEventListener('input', () => {
+      const len = ivTextarea.value.trim().length;
+      ivCharCount.textContent = len.toLocaleString() + ' / 5,000';
+      if (len > 0) {
+        ivSubmitBtn.classList.add('active');
+      } else {
+        ivSubmitBtn.classList.remove('active');
+      }
+      // Auto-resize
+      ivTextarea.style.height = 'auto';
+      ivTextarea.style.height = Math.min(ivTextarea.scrollHeight, 200) + 'px';
+    });
+
+    // Enter to submit, Shift+Enter for newline
+    ivTextarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (ivSubmitBtn.classList.contains('active') && !ivIsLoading) {
+          ivSubmitBtn.click();
+        }
+      }
+    });
+
+    // Back button — navigate to previous question (local UI only, no API call)
+    ivBackBtn.addEventListener('click', () => {
+      if (ivIsLoading || ivCurrentQ <= 1) return;
+
+      // Pop the most recent answer from the stack
+      const prev = ivPrevAnswers.pop();
+
+      // Remove the top card from the visual prev-stack
+      const topCard = ivPrevStack.querySelector('.iv-prev');
+      if (topCard) topCard.remove();
+
+      // Go back one question
+      ivCurrentQ--;
+      chatTurnCount = Math.max(0, chatTurnCount - 1);
+      updateDot3();
+
+      waveTargetEnergy = 0;
+
+      // Restore previous question and answer
+      const copy = getQuestionCopy(ivCurrentQ);
+      if (prev && prev.aiResponseRaw) {
+        ivQText.innerHTML = renderMarkdown(prev.aiResponseRaw);
+        ivLastAiResponse = prev.aiResponseRaw;
+      } else if (copy.fallbackQ) {
+        ivQText.textContent = copy.fallbackQ;
+      }
+      ivUpdateCard();
+
+      // Restore answer text if available
+      ivTextarea.value = prev ? prev.answer : '';
+      const len = ivTextarea.value.trim().length;
+      ivCharCount.textContent = len.toLocaleString() + ' / 5,000';
+      ivSubmitBtn.classList.toggle('active', len > 0);
+
+      // Animate card in
+      ivCard.classList.remove('entering', 'exiting');
+      void ivCard.offsetHeight;
+      ivCard.classList.add('entering');
+
+      setTimeout(() => ivTextarea.focus(), 50);
+    });
+
+    // "I have more to add" button
+    document.getElementById('iv-btn-more').addEventListener('click', async () => {
+      ivTotalQ = ivCurrentQ + 3;
+      ivCompleteState.style.display = 'none';
+      ivShowLoading();
+      await ivSendMessage({ message: 'I have more to share' });
+    });
+
+    // "Generate Dynamic Model" button
+    document.getElementById('iv-btn-generate').addEventListener('click', () => {
+      // Transition to review widget (slide 4)
+      transitionToReview('');
+    });
+
+        // ══════════════════════════════════════════════════════════════════
+    // SLIDE 4 — Review (Widget 4: Dynamic Model Ready)
+    // ══════════════════════════════════════════════════════════════════
+
+    function transitionToReview(aiResponse) {
+      stopWaveform();
+      apiStreamChat({ type: 'review_start' }).catch(() => {});
+      trackStatus('review_reached');
+      showSlide(4);
+    }
+
+    // "Get Your Dynamic Model" button
+    const MODEL_LOADING_MESSAGES = [
+      'Generating your dynamic model',
+      'Analyzing your five systems',
+      'Mapping your scaling path',
+      'Almost there',
+      'Configuring your roadmap',
+      'Worth the wait',
+      'Finalizing your diagnostic',
+      'Putting the pieces together',
+    ];
+    let modelLoadingTimer = null;
+
+    function startModelLoadingMessages() {
+      let idx = 0;
+      const el = document.getElementById('model-loading-text');
+      el.textContent = MODEL_LOADING_MESSAGES[0];
+      modelLoadingTimer = setInterval(() => {
+        idx = (idx + 1) % MODEL_LOADING_MESSAGES.length;
+        el.style.opacity = '0';
+        setTimeout(() => {
+          el.textContent = MODEL_LOADING_MESSAGES[idx];
+          el.style.opacity = '1';
+        }, 300);
+      }, 5000);
+    }
+
+    function stopModelLoadingMessages() {
+      if (modelLoadingTimer) {
+        clearInterval(modelLoadingTimer);
+        modelLoadingTimer = null;
+      }
+    }
+
+    document.getElementById('rv-btn-get-model').addEventListener('click', async () => {
+      const btn = document.getElementById('rv-btn-get-model');
+      btn.disabled = true;
+      showSlide(5);
+      document.getElementById('model-loading').style.display = 'flex';
+      document.getElementById('model-content').classList.remove('visible');
+      startModelLoadingMessages();
+
+      try {
+        const data = await apiStreamChat({ type: 'generate_model' });
+        stopModelLoadingMessages();
+        displayModel(data.response);
+      } catch (err) {
+        stopModelLoadingMessages();
+        showError(err.message === 'SESSION_EXPIRED'
+          ? 'Your session has expired. Please refresh to start over.'
+          : 'Something went wrong generating your dynamic model. Please try again.');
+        showSlide(4);
+        btn.disabled = false;
+      }
+    });
+
+    // "Wait, I have more to add" — show sub-slide
+    const reviewContent = document.querySelector('#slide-4 .review-content');
+    const addmoreContent = document.getElementById('addmore-content');
+    const addmoreTextarea = document.getElementById('addmore-textarea');
+
+    function rvCrossfade(outEl, inEl, onComplete) {
+      // Fade out the outgoing element
+      outEl.style.opacity = '0';
+      outEl.style.pointerEvents = 'none';
+
+      setTimeout(function() {
+        outEl.classList.add('rv-hidden');
+        outEl.style.opacity = '';
+        outEl.style.pointerEvents = '';
+
+        // Prepare incoming: remove rv-hidden but start invisible
+        inEl.style.opacity = '0';
+        inEl.classList.remove('rv-hidden');
+        inEl.offsetHeight; // force reflow
+        inEl.style.opacity = '';
+
+        if (onComplete) setTimeout(onComplete, 400);
+      }, 550); // 400ms fade + 150ms delay
+    }
+
+    function showAddMore() {
+      rvCrossfade(reviewContent, addmoreContent, function() {
+        addmoreTextarea.value = '';
+        addmoreTextarea.focus();
+      });
+    }
+
+    function hideAddMore() {
+      rvCrossfade(addmoreContent, reviewContent);
+    }
+
+    document.getElementById('rv-btn-more-to-add').addEventListener('click', showAddMore);
+
+    document.getElementById('addmore-back').addEventListener('click', hideAddMore);
+
+    document.getElementById('addmore-confirm').addEventListener('click', async () => {
+      const text = addmoreTextarea.value.trim();
+      if (text) {
+        apiStreamChat({ message: text, type: 'additional_context' }).catch(() => {});
+      }
+      hideAddMore();
+    });
+
+    // ── Widget 4: Wireframe globe background ──
+    const rvGlobeCanvas = document.getElementById('rv-globe');
+    const rvGlobeCtx = rvGlobeCanvas.getContext('2d');
+    let rvGlobeAnimId = null;
+
+    function globeSize() {
+      const s = Math.min(700, window.innerWidth);
+      return { w: s, h: s, cx: s / 2, cy: s / 2, r: s * 260 / 700 };
+    }
+    function resizeGlobeCanvas() {
+      const g = globeSize();
+      rvGlobeCanvas.width = g.w;
+      rvGlobeCanvas.height = g.h;
+    }
+    resizeGlobeCanvas();
+    window.addEventListener('resize', resizeGlobeCanvas);
+    const GLOBE_LAT = 12, GLOBE_LON = 20;
+
+    const globePoints = [];
+    for (let i = 0; i <= GLOBE_LAT; i++) {
+      const lat = (Math.PI / GLOBE_LAT) * i;
+      for (let j = 0; j < GLOBE_LON; j++) {
+        const lon = (2 * Math.PI / GLOBE_LON) * j;
+        globePoints.push({ x: Math.sin(lat) * Math.cos(lon), y: Math.cos(lat), z: Math.sin(lat) * Math.sin(lon) });
+      }
+    }
+
+    const globeEdges = [];
+    for (let i = 0; i <= GLOBE_LAT; i++) {
+      for (let j = 0; j < GLOBE_LON; j++) {
+        const idx = i * GLOBE_LON + j;
+        globeEdges.push([idx, j < GLOBE_LON - 1 ? idx + 1 : i * GLOBE_LON]);
+        if (i < GLOBE_LAT) globeEdges.push([idx, idx + GLOBE_LON]);
+      }
+    }
+
+    let globeAngleY = 0;
+    const globeAngleX = 0.3;
+
+    function globeProject(p, g) {
+      const cosY = Math.cos(globeAngleY), sinY = Math.sin(globeAngleY);
+      const x1 = p.x * cosY - p.z * sinY;
+      const z1 = p.x * sinY + p.z * cosY;
+      const cosX = Math.cos(globeAngleX), sinX = Math.sin(globeAngleX);
+      const y2 = p.y * cosX - z1 * sinX;
+      const z2 = p.y * sinX + z1 * cosX;
+      return { x: g.cx + x1 * g.r, y: g.cy + y2 * g.r, depth: z2 };
+    }
+
+    function drawGlobe() {
+      const g = globeSize();
+      rvGlobeCtx.clearRect(0, 0, g.w, g.h);
+      globeAngleY += 0.002;
+      const proj = globePoints.map(p => globeProject(p, g));
+
+      for (const [a, b] of globeEdges) {
+        const pa = proj[a], pb = proj[b];
+        const avg = (pa.depth + pb.depth) / 2;
+        if (avg < -0.3) continue;
+        const op = Math.max(0, Math.min(1, (avg + 0.3) / 1.3)) * 0.09;
+        rvGlobeCtx.beginPath();
+        rvGlobeCtx.moveTo(pa.x, pa.y);
+        rvGlobeCtx.lineTo(pb.x, pb.y);
+        rvGlobeCtx.strokeStyle = 'rgba(165,226,44,' + op + ')';
+        rvGlobeCtx.lineWidth = 0.6;
+        rvGlobeCtx.stroke();
+      }
+
+      for (const p of proj) {
+        if (p.depth < -0.2) continue;
+        const op = Math.max(0, Math.min(1, (p.depth + 0.2) / 1.2)) * 0.35;
+        const r = 1 + (p.depth + 1) * 0.5;
+        rvGlobeCtx.beginPath();
+        rvGlobeCtx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        rvGlobeCtx.fillStyle = 'rgba(165,226,44,' + op + ')';
+        rvGlobeCtx.fill();
+      }
+
+      rvGlobeAnimId = requestAnimationFrame(drawGlobe);
+    }
+
+    function startGlobe() {
+      if (!rvGlobeAnimId) rvGlobeAnimId = requestAnimationFrame(drawGlobe);
+    }
+    function stopGlobe() {
+      if (rvGlobeAnimId) { cancelAnimationFrame(rvGlobeAnimId); rvGlobeAnimId = null; }
+    }
+
+    // ── Widget 4: entrance animations ──
+    function playWidget4Entrance() {
+      const checkIcon = document.getElementById('rv-check-icon');
+      checkIcon.classList.remove('rv-animating');
+      void checkIcon.offsetWidth;
+      checkIcon.classList.add('rv-animating');
+
+      document.querySelectorAll('#slide-4 .rv-stagger').forEach(el => {
+        el.classList.remove('rv-visible');
+        el.style.animationDelay = el.dataset.rvDelay + 's';
+      });
+      requestAnimationFrame(() => {
+        document.querySelectorAll('#slide-4 .rv-stagger').forEach(el => el.classList.add('rv-visible'));
+      });
+
+      startGlobe();
+    }
+
+    // Hook into showSlide to start/stop globe and trigger entrance
+    const _origShowSlide = showSlide;
+    showSlide = function(n) {
+      _origShowSlide(n);
+      if (n === 4) {
+        playWidget4Entrance();
+      } else {
+        stopGlobe();
+      }
+    };
+
+    // ══════════════════════════════════════════════════════════════════
+    // SLIDE 5 — Dynamic Model (Widget 5)
+    // ══════════════════════════════════════════════════════════════════
+
+    const modelLoading   = document.getElementById('model-loading');
+    const modelContent   = document.getElementById('model-content');
+    const modelBody      = document.getElementById('model-body');
+    const btnAccept        = document.getElementById('btn-accept');
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#39;');
+    }
+
+    function renderMarkdown(text) {
+      const escaped = escapeHtml(text);
+      return escaped
+        .replace(/^---+$/gm,           '<hr>')
+        .replace(/^###\s+(.+)$/gm,     '<h3>$1</h3>')
+        .replace(/^##\s+(.+)$/gm,      '<h3>$1</h3>')
+        .replace(/^#\s+(.+)$/gm,       '<h2>$1</h2>')
+        .replace(/\*\*(.+?)\*\*/g,     '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,         '<em>$1</em>')
+        .replace(/^\d+\.\s+(.+)$/gm,   '<li>$1</li>')
+        .replace(/^[-*]\s+(.+)$/gm,    '<li>$1</li>')
+        .replace(/(<li>.*<\/li>\n?)+/gs, m => '<ul>' + m + '</ul>')
+        .replace(/\n\n+/g,             '</p><p>')
+        .replace(/\n/g,                '<br>')
+        .replace(/^(.+)/,              '<p>$1</p>');
+    }
+
+    function displayModel(text) {
+      modelBody.innerHTML = renderMarkdown(text);
+      modelLoading.style.display = 'none';
+      const wrap = document.querySelector('.model-body-wrap');
+      const footer = document.querySelector('.model-footer');
+      if (wrap) { wrap.style.animation = 'none'; wrap.offsetHeight; wrap.style.animation = ''; }
+      if (footer) { footer.style.animation = 'none'; footer.offsetHeight; footer.style.animation = ''; }
+      modelContent.classList.add('visible');
+    }
+
+    // Accept dynamic model — end session and transition to Page 3
+    btnAccept.addEventListener('click', async () => {
+      btnAccept.disabled = true;
+      try {
+        await apiFetch('/api/session/end', { method: 'POST' });
+      } catch (_) {}
+
+      // Fade out the widget wrapper
+      widgetWrapper.style.transition = 'opacity 0.4s cubic-bezier(0.4,0,0.2,1)';
+      widgetWrapper.style.opacity = '0';
+
+      // After 150ms delay, start fading in the next-steps page
+      setTimeout(function() {
+        nextStepsPage.style.display = '';
+        nextStepsPage.offsetHeight;
+        nextStepsPage.classList.add('page-visible');
+        history.replaceState(null, '', '#/next-steps');
+        updateDots('complete');
+        trackStatus('sales_page_reached');
+      }, 150);
+
+      // Clean up widget wrapper after full transition
+      setTimeout(function() {
+        widgetWrapper.style.display = 'none';
+      }, 600);
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // CTA CLICK TRACKING
+    // ══════════════════════════════════════════════════════════════════
+
+    document.getElementById('discovery-cta').addEventListener('click', () => {
+      trackStatus('cta_clicked');
+    });
+
+    // ══════════════════════════════════════════════════════════════════
+    // VSL WATCH TRACKING
+    // ══════════════════════════════════════════════════════════════════
+    // Videos are currently Loom placeholders (commented-out iframes).
+    // When a real video player is embedded, wire the tracking below.
+    //
+    // The trackVsl(video, percent) function sends milestone data to
+    // POST /api/track-vsl. Call it when the viewer crosses 25%, 50%,
+    // 75%, or 100%. Each milestone should only fire once per session.
+    //
+    // ── Generic setup (works for any player) ──
+    //
+    // const vslMilestonesSent = { vsl_1: new Set(), vsl_2: new Set() };
+    // function checkVslMilestone(videoKey, currentPercent) {
+    //   [25, 50, 75, 100].forEach(m => {
+    //     if (currentPercent >= m && !vslMilestonesSent[videoKey].has(m)) {
+    //       vslMilestonesSent[videoKey].add(m);
+    //       trackVsl(videoKey, m);
+    //     }
+    //   });
+    // }
+    //
+    // ── Loom (using postMessage API) ──
+    //
+    // window.addEventListener('message', (e) => {
+    //   if (e.origin !== 'https://www.loom.com') return;
+    //   const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+    //   if (data.type === 'progress') {
+    //     const pct = Math.round(data.percent * 100);
+    //     // Determine which video based on the source iframe
+    //     const videoKey = e.source === document.querySelector('#video-container iframe')?.contentWindow
+    //       ? 'vsl_1' : 'vsl_2';
+    //     checkVslMilestone(videoKey, pct);
+    //   }
+    // });
+    //
+    // ── YouTube (iframe API) ──
+    //
+    // const ytPlayer = new YT.Player('video-container', { ... });
+    // setInterval(() => {
+    //   if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+    //     const pct = Math.round((ytPlayer.getCurrentTime() / ytPlayer.getDuration()) * 100);
+    //     checkVslMilestone('vsl_1', pct);
+    //   }
+    // }, 1000);
+    //
+    // ── Vimeo (Player.js) ──
+    //
+    // const vimeoPlayer = new Vimeo.Player('video-container');
+    // vimeoPlayer.on('timeupdate', (data) => {
+    //   checkVslMilestone('vsl_1', Math.round(data.percent * 100));
+    // });
+    //
+    // ── Wistia ──
+    //
+    // window._wq = window._wq || [];
+    // _wq.push({ id: 'VIDEO_ID', onReady: (video) => {
+    //   video.bind('percentwatchedchanged', (pct) => {
+    //     checkVslMilestone('vsl_1', Math.round(pct * 100));
+    //   });
+    // }});
+
+    // ══════════════════════════════════════════════════════════════════
+    // DEV TOOLBAR — REMOVE BEFORE PRODUCTION
+    // ══════════════════════════════════════════════════════════════════
+    (function() {
+      // Track current page-level location: 'landing', 'diagnostic', 'next-steps'
+      function devGetPage() {
+        const hash = location.hash;
+        if (hash === '#/next-steps') return 'next-steps';
+        if (hash === '#/diagnostic') return 'diagnostic';
+        return 'landing';
+      }
+
+      const devBar = document.createElement('div');
+      devBar.id = 'dev-toolbar';
+      devBar.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99999;display:flex;align-items:center;gap:6px;';
+
+      const btnStyle = 'background:#8FBF6B;color:#111;border:none;padding:6px 14px;border-radius:6px;font:600 13px/1 sans-serif;cursor:pointer;opacity:0.85;box-shadow:0 2px 8px rgba(0,0,0,.3);';
+
+      const backBtn = document.createElement('button');
+      backBtn.textContent = '\u2190 Back';
+      backBtn.style.cssText = btnStyle;
+      backBtn.addEventListener('mouseenter', () => backBtn.style.opacity = '1');
+      backBtn.addEventListener('mouseleave', () => backBtn.style.opacity = '0.85');
+
+      const stateLabel = document.createElement('span');
+      stateLabel.style.cssText = 'color:#8FBF6B;font:600 11px/28px monospace;opacity:0.7;min-width:90px;text-align:center;';
+
+      const skipBtn = document.createElement('button');
+      skipBtn.textContent = 'Skip \u2192';
+      skipBtn.style.cssText = btnStyle;
+      skipBtn.addEventListener('mouseenter', () => skipBtn.style.opacity = '1');
+      skipBtn.addEventListener('mouseleave', () => skipBtn.style.opacity = '0.85');
+
+      function updateStateLabel() {
+        const page = devGetPage();
+        if (page === 'landing') stateLabel.textContent = 'LANDING';
+        else if (page === 'next-steps') stateLabel.textContent = 'POST-DIAG';
+        else stateLabel.textContent = 'SLIDE ' + currentSlide;
+      }
+
+      // Update label on navigation
+      window.addEventListener('hashchange', () => setTimeout(updateStateLabel, 50));
+      const origShowSlide = showSlide;
+      showSlide = function(n) { origShowSlide(n); updateStateLabel(); };
+      setTimeout(updateStateLabel, 100);
+
+      async function devEnsureSession() {
+        if (!sessionId) {
+          try {
+            const data = await apiFetch('/api/session/start', {
+              method: 'POST',
+              body: { contact: { fullName: 'Dev User', email: 'dev@test.com', instagramHandle: '@dev' }, referralSource: 'dev-skip' }
+            });
+            sessionId = data.sessionId;
+            await apiFetch('/api/intake', { method: 'POST', body: { answers: {
+              niche: { category: 'Wealth', subcategory: 'Agency' },
+              fulfillment_model: 'Done-with-you',
+              price_point: '$1,000\u2013$5,000',
+              funnel_type: ['VSL Funnel'],
+              sales_team: ['Setter', 'Closer'],
+              paid_advertising: 'Yes'
+            } } });
+          } catch (e) {
+            console.warn('Dev skip: session setup failed', e);
+          }
+        }
+      }
+
+      // ── SKIP FORWARD ──
+      skipBtn.addEventListener('click', async () => {
+        const page = devGetPage();
+
+        // Landing → diagnostic slide 1
+        if (page === 'landing') {
+          location.hash = '#/diagnostic';
+          return;
+        }
+
+        // Next-steps page has nowhere forward to go
+        if (page === 'next-steps') return;
+
+        // Inside diagnostic widget
+        if (currentSlide >= 1) await devEnsureSession();
+
+        if (currentSlide === 1) {
+          showSlide(2);
+        } else if (currentSlide === 2) {
+          showSlide(3);
+          initChat();
+        } else if (currentSlide === 3) {
+          showSlide(4);
+        } else if (currentSlide === 4) {
+          showSlide(5);
+          modelLoading.style.display = 'none';
+          modelContent.classList.add('visible');
+          modelBody.innerHTML = '<h2>Dev Placeholder Dynamic Model</h2><p>Skipped to dynamic model view.</p>';
+        } else if (currentSlide === 5) {
+          location.hash = '#/next-steps';
+        }
+      });
+
+      // ── GO BACK ──
+      backBtn.addEventListener('click', () => {
+        const page = devGetPage();
+
+        // Next-steps → diagnostic slide 5
+        if (page === 'next-steps') {
+          location.hash = '#/diagnostic';
+          setTimeout(() => showSlide(5), 50);
+          return;
+        }
+
+        // Landing has nowhere back to go
+        if (page === 'landing') return;
+
+        // Inside diagnostic widget
+        if (currentSlide === 1) {
+          location.hash = '#/';
+        } else if (currentSlide === 2) {
+          showSlide(1);
+        } else if (currentSlide === 3) {
+          showSlide(2);
+        } else if (currentSlide === 4) {
+          showSlide(3);
+        } else if (currentSlide === 5) {
+          showSlide(4);
+        }
+      });
+
+      devBar.appendChild(backBtn);
+      devBar.appendChild(stateLabel);
+      devBar.appendChild(skipBtn);
+      document.body.appendChild(devBar);
+    })();
+
+  </script>
+</body>
+</html>

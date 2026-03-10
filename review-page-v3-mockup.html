@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carbon Consulting - Review Page v3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      background: #111214;
+      color: #E2E2E0;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    #moireCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .vignette {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 30%, #111214 75%);
+    }
+
+    .widget {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      margin: 0 auto;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 0 24px;
+    }
+
+    .progress-bar {
+      display: flex;
+      gap: 4px;
+      padding: 20px 0 8px;
+    }
+    .progress-segment {
+      flex: 1;
+      height: 3px;
+      background: #2A2C2F;
+      border-radius: 2px;
+    }
+    .progress-segment.completed { background: #8FBF6B; }
+    .progress-segment.active { background: #8FBF6B; opacity: 0.6; }
+
+    .progress-labels {
+      display: flex;
+      padding: 0 0 20px;
+    }
+    .progress-label {
+      flex: 1;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #55555A;
+      text-align: center;
+    }
+    .progress-label.active { color: #8FBF6B; }
+    .progress-label.completed { color: #7A7A7D; }
+
+    .review-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .status-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(143, 191, 107, 0.08);
+      border: 1.5px solid rgba(143, 191, 107, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(143, 191, 107, 0);
+        border-color: rgba(143, 191, 107, 0.25);
+      }
+      50% {
+        box-shadow: 0 0 24px 6px rgba(143, 191, 107, 0.1);
+        border-color: rgba(143, 191, 107, 0.4);
+      }
+    }
+
+    .status-icon svg {
+      width: 28px;
+      height: 28px;
+      color: #8FBF6B;
+    }
+
+    .review-title {
+      font-family: 'Roboto Slab', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #E2E2E0;
+      margin-bottom: 12px;
+      line-height: 1.25;
+    }
+
+    .review-title span {
+      color: #8FBF6B;
+    }
+
+    .review-subtitle {
+      font-size: 15px;
+      color: #55555A;
+      margin-bottom: 48px;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    .action-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px 36px;
+      background: #8FBF6B;
+      color: #111214;
+      font-family: 'Roboto Slab', serif;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+      box-shadow: 0 2px 16px rgba(143, 191, 107, 0.2);
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary:hover {
+      background: #A1CF7F;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(143, 191, 107, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 16px rgba(143, 191, 107, 0.2);
+    }
+
+    .btn-primary svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-primary:hover svg {
+      transform: translateX(3px);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 13px 24px;
+      background: transparent;
+      border: 1px solid #2A2C2F;
+      border-radius: 10px;
+      color: #55555A;
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: #333538;
+      color: #7A7A7D;
+    }
+
+    .btn-secondary svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-secondary:hover svg {
+      transform: translateX(-2px);
+    }
+
+    .reassurance {
+      margin-top: 32px;
+      font-size: 11px;
+      color: #2A2C2F;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reassurance svg { width: 12px; height: 12px; opacity: 0.5; }
+
+    @media (max-width: 480px) {
+      .review-title { font-size: 24px; }
+      .review-subtitle { font-size: 14px; margin-bottom: 40px; }
+      .action-stack { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="moireCanvas"></canvas>
+  <div class="vignette"></div>
+
+  <div class="widget">
+    <div class="progress-bar">
+      <div class="progress-segment completed"></div>
+      <div class="progress-segment completed"></div>
+      <div class="progress-segment completed"></div>
+      <div class="progress-segment active"></div>
+      <div class="progress-segment"></div>
+    </div>
+    <div class="progress-labels">
+      <div class="progress-label completed">Your Info</div>
+      <div class="progress-label completed">Quick-Fire</div>
+      <div class="progress-label completed">Deep Dive</div>
+      <div class="progress-label active">Review</div>
+      <div class="progress-label">Dynamic Model</div>
+    </div>
+
+    <div class="review-content">
+      <div class="status-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+
+      <div class="review-title">Your <span>Dynamic Model</span> is Ready</div>
+      <div class="review-subtitle">We've built a personalized scaling dynamic model based on everything you shared. It's waiting for you.</div>
+
+      <div class="action-stack">
+        <button class="btn-primary">
+          Get Your Dynamic Model
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/>
+            <path d="m12 5 7 7-7 7"/>
+          </svg>
+        </button>
+        <button class="btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"/>
+            <path d="m12 19-7-7 7-7"/>
+          </svg>
+          Wait - I have more to add
+        </button>
+      </div>
+
+      <div class="reassurance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Your information is private and only used for this diagnostic
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('moireCanvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, cx, cy;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = w / 2;
+      cy = h / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const rings = [
+      { radius: 60,  dots: 24,  speed: 0.0003,  dotSize: 1.8, color: [143, 191, 107], opacity: 0.25 },
+      { radius: 90,  dots: 32,  speed: -0.00025, dotSize: 1.5, color: [143, 191, 107], opacity: 0.2  },
+      { radius: 120, dots: 40,  speed: 0.0002,   dotSize: 1.8, color: [226, 226, 224], opacity: 0.15 },
+      { radius: 155, dots: 48,  speed: -0.00018, dotSize: 1.4, color: [143, 191, 107], opacity: 0.2  },
+      { radius: 190, dots: 56,  speed: 0.00015,  dotSize: 1.6, color: [85,  85,  90],  opacity: 0.12 },
+      { radius: 225, dots: 64,  speed: -0.00013, dotSize: 1.5, color: [143, 191, 107], opacity: 0.18 },
+      { radius: 265, dots: 72,  speed: 0.00011,  dotSize: 1.3, color: [226, 226, 224], opacity: 0.1  },
+      { radius: 305, dots: 80,  speed: -0.0001,  dotSize: 1.6, color: [143, 191, 107], opacity: 0.15 },
+      { radius: 350, dots: 88,  speed: 0.00008,  dotSize: 1.2, color: [85,  85,  90],  opacity: 0.08 },
+      { radius: 395, dots: 96,  speed: -0.00007, dotSize: 1.4, color: [143, 191, 107], opacity: 0.12 },
+      { radius: 440, dots: 104, speed: 0.00006,  dotSize: 1.1, color: [226, 226, 224], opacity: 0.07 },
+      { radius: 490, dots: 112, speed: -0.00005, dotSize: 1.3, color: [143, 191, 107], opacity: 0.1  },
+    ];
+
+    const rings2 = rings.map(r => ({
+      ...r,
+      radius: r.radius * 0.85,
+      dots: r.dots - 4,
+      speed: r.speed * -1.15,
+      opacity: r.opacity * 0.6,
+      offsetX: 40,
+      offsetY: -30
+    }));
+
+    const rings3 = rings.map(r => ({
+      ...r,
+      radius: r.radius * 1.1,
+      dots: r.dots + 2,
+      speed: r.speed * 0.7,
+      opacity: r.opacity * 0.35,
+      offsetX: -30,
+      offsetY: 25
+    }));
+
+    function drawRingSet(ringSet, time, ox, oy) {
+      for (const ring of ringSet) {
+        const centerX = cx + (ring.offsetX || 0) + (ox || 0);
+        const centerY = cy + (ring.offsetY || 0) + (oy || 0);
+        const angleStep = (Math.PI * 2) / ring.dots;
+        const rotation = time * ring.speed;
+
+        for (let i = 0; i < ring.dots; i++) {
+          const angle = i * angleStep + rotation;
+          const x = centerX + Math.cos(angle) * ring.radius;
+          const y = centerY + Math.sin(angle) * ring.radius;
+
+          if (x < -20 || x > w + 20 || y < -20 || y > h + 20) continue;
+
+          const breathe = Math.sin(time * 0.001 + i * 0.5 + ring.radius * 0.01) * 0.08;
+          const currentOpacity = ring.opacity + breathe;
+          if (currentOpacity <= 0) continue;
+
+          ctx.beginPath();
+          ctx.arc(x, y, ring.dotSize * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${ring.color[0]}, ${ring.color[1]}, ${ring.color[2]}, ${currentOpacity * 0.12})`;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(x, y, ring.dotSize, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${ring.color[0]}, ${ring.color[1]}, ${ring.color[2]}, ${currentOpacity})`;
+          ctx.fill();
+        }
+      }
+    }
+
+    function drawInterferences(ringSet, time, ox, oy) {
+      const allDots = [];
+      for (const ring of ringSet) {
+        const centerX = cx + (ring.offsetX || 0) + (ox || 0);
+        const centerY = cy + (ring.offsetY || 0) + (oy || 0);
+        const angleStep = (Math.PI * 2) / ring.dots;
+        const rotation = time * ring.speed;
+        for (let i = 0; i < ring.dots; i++) {
+          const angle = i * angleStep + rotation;
+          allDots.push({
+            x: centerX + Math.cos(angle) * ring.radius,
+            y: centerY + Math.sin(angle) * ring.radius,
+            color: ring.color,
+            opacity: ring.opacity
+          });
+        }
+      }
+
+      const bucketSize = 30;
+      const buckets = {};
+      for (const dot of allDots) {
+        if (dot.x < -20 || dot.x > w + 20 || dot.y < -20 || dot.y > h + 20) continue;
+        const bx = Math.floor(dot.x / bucketSize);
+        const by = Math.floor(dot.y / bucketSize);
+        const key = bx + ',' + by;
+        if (!buckets[key]) buckets[key] = [];
+        buckets[key].push(dot);
+      }
+
+      ctx.lineWidth = 0.4;
+      for (const key in buckets) {
+        const bucket = buckets[key];
+        const [bx, by] = key.split(',').map(Number);
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const nKey = (bx + dx) + ',' + (by + dy);
+            const neighbor = buckets[nKey];
+            if (!neighbor) continue;
+            for (const a of bucket) {
+              for (const b of neighbor) {
+                if (a === b) continue;
+                const ddx = a.x - b.x;
+                const ddy = a.y - b.y;
+                const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                if (dist < 25 && dist > 3) {
+                  const alpha = (1 - dist / 25) * 0.04;
+                  ctx.beginPath();
+                  ctx.moveTo(a.x, a.y);
+                  ctx.lineTo(b.x, b.y);
+                  ctx.strokeStyle = `rgba(143, 191, 107, ${alpha})`;
+                  ctx.stroke();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    let globalAngle = 0;
+
+    function animate(time) {
+      ctx.clearRect(0, 0, w, h);
+      globalAngle += 0.0001;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(globalAngle);
+      ctx.translate(-cx, -cy);
+
+      drawInterferences(rings, time, 0, 0);
+      drawRingSet(rings, time, 0, 0);
+      drawRingSet(rings2, time, 0, 0);
+      drawRingSet(rings3, time, 0, 0);
+
+      ctx.restore();
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

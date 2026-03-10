@@ -1,0 +1,21 @@
+{
+  "name": "carbon-consulting-backend",
+  "version": "2.0.0",
+  "description": "Backend API proxy for Momentra diagnostic chatbot",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@supabase/supabase-js": "^2.49.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "uuid": "^11.1.0"
+  }
+}
