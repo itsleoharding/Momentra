@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Carbon Consulting - Scaling Diagnostic</title>
+  <title>Momentra</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Slab:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -2733,6 +2733,11 @@
         margin-top: 8px;
         margin-bottom: 40px;
       }
+      #next-steps-inner {
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding-top: 40px;
+      }
       .post-diag-content {
         gap: 0;
       }
@@ -3484,7 +3489,7 @@
        PAGE 3: NEXT STEPS (Sales VSL)
   ════════════════════════════════════════════════════════════════ -->
   <div id="next-steps-page" style="display:none;">
-    <div style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;">
+    <div style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;" id="next-steps-inner">
       <div class="post-diag-content">
 
         <img src="/images/Third_Page.png" alt="This Walkthrough Video Will Explain How To Implement Your Dynamic Model To Hit Six Figures Per Month" class="page-text-image" />
@@ -5223,9 +5228,9 @@
 
       function updateStateLabel() {
         const page = devGetPage();
-        if (page === 'landing') stateLabel.textContent = 'LANDING';
-        else if (page === 'next-steps') stateLabel.textContent = 'POST-DIAG';
-        else stateLabel.textContent = 'SLIDE ' + currentSlide;
+        if (page === 'landing') stateLabel.textContent = 'BEFORE';
+        else if (page === 'next-steps') stateLabel.textContent = 'AFTER';
+        else stateLabel.textContent = 'DURING';
       }
 
       // Update label on navigation
