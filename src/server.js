@@ -182,7 +182,7 @@ app.use(
         fontSrc: ["'self'", "https:", "data:"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'"],
-        frameSrc: ["https://www.loom.com"],
+        frameSrc: ["https://fast.wistia.net", "https://*.wistia.com"],
       },
     },
   })
