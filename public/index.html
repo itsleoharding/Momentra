@@ -45,39 +45,9 @@
       overflow: visible;
     }
 
-    .echo-symbol { pointer-events: none; position: absolute; }
-
-    #intro-echo {
-      width: 280px; height: 280px;
-      z-index: 0;
-      overflow: visible;
-    }
-    #intro-echo path {
-      transform-box: fill-box;
-      transform-origin: center;
-    }
     .intro-wordmark-group {
       position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center; gap: 16px;
-    }
-
-    /* Echo arc expansion — triggered by .transitioning on #intro-screen */
-    #intro-screen.transitioning #intro-echo path:nth-child(1) {
-      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0s forwards;
-    }
-    #intro-screen.transitioning #intro-echo path:nth-child(2) {
-      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0.08s forwards;
-    }
-    #intro-screen.transitioning #intro-echo path:nth-child(3) {
-      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0.16s forwards;
-    }
-    #intro-screen.transitioning #intro-echo path:nth-child(4) {
-      animation: arcExpand 1.6s cubic-bezier(0.2, 0, 0, 1) 0.24s forwards;
-    }
-    @keyframes arcExpand {
-      0%   { transform: scale(1); opacity: 1; }
-      60%  { opacity: 0.8; }
-      100% { transform: scale(12); opacity: 0; }
     }
 
     /* Wordmark lift and dissolve — triggered by .transitioning */
@@ -2781,13 +2751,7 @@
        INTRO SCREEN
   ════════════════════════════════════════════════════════════════ -->
   <div id="intro-screen">
-    <svg id="intro-echo" class="echo-symbol" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M78 22 A38 38 0 1 0 78 98" stroke="white" stroke-opacity="0.25" stroke-width="3.5" stroke-linecap="round"/>
-      <path d="M90 14 A48 48 0 1 0 90 106" stroke="white" stroke-opacity="0.1" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M100 8 A55 55 0 1 0 100 112" stroke="white" stroke-opacity="0.04" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M108 3 A62 62 0 1 0 108 117" stroke="white" stroke-opacity="0.015" stroke-width="1" stroke-linecap="round"/>
-    </svg>
-    <div class="intro-wordmark-group">
+<div class="intro-wordmark-group">
       <div class="intro-line"></div>
       <div id="intro-text">Carbon Consulting</div>
       <div class="intro-line-bottom"></div>
