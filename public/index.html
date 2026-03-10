@@ -25,8 +25,7 @@
       font-family: 'Roboto', sans-serif;
       font-weight: 400;
       overflow: hidden;
-      position: fixed;
-      width: 100%;
+      overscroll-behavior: none;
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -2180,6 +2179,8 @@
       background: #0A0B0D;
       min-height: 100vh;
       min-height: 100dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     #next-steps-page.page-visible {
       opacity: 1;
@@ -2732,6 +2733,7 @@
       #landing {
         justify-content: flex-start;
         padding-top: 4px;
+        padding-bottom: 40px;
       }
       .landing-content {
         gap: 0;
@@ -3615,6 +3617,9 @@
     }
 
     runIntroSequence();
+    if (!location.hash || location.hash === '#/' || location.hash === '#') {
+      history.replaceState(null, '', '#/before');
+    }
 
     // ══════════════════════════════════════════════════════════════════
     // HASH-BASED ROUTING
@@ -3687,7 +3692,7 @@
 
     // On initial load, if hash is set (e.g. user refreshed on #/during),
     // route accordingly — but only after intro sequence completes
-    if (location.hash && location.hash !== '#/') {
+    if (location.hash && location.hash !== '#/' && location.hash !== '#/before') {
       // Delay to let intro sequence run, then navigate
       setTimeout(() => {
         navigateTo(getRouteFromHash());
