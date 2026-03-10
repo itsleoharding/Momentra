@@ -3676,8 +3676,8 @@
 
     function getRouteFromHash() {
       const hash = location.hash;
-      if (hash === '#/diagnostic') return 'diagnostic';
-      if (hash === '#/next-steps') return 'next-steps';
+      if (hash === '#/during') return 'diagnostic';
+      if (hash === '#/after') return 'next-steps';
       return 'landing';
     }
 
@@ -3685,7 +3685,7 @@
       navigateTo(getRouteFromHash());
     });
 
-    // On initial load, if hash is set (e.g. user refreshed on #/diagnostic),
+    // On initial load, if hash is set (e.g. user refreshed on #/during),
     // route accordingly — but only after intro sequence completes
     if (location.hash && location.hash !== '#/') {
       // Delay to let intro sequence run, then navigate
@@ -3916,7 +3916,7 @@
       // After transition completes (0.6s + 0.25s delay + buffer)
       setTimeout(function() {
         landing.style.display = 'none';
-        history.replaceState(null, '', '#/diagnostic');
+        history.replaceState(null, '', '#/during');
 
         // Track page view
         if (sessionId) {
@@ -5117,7 +5117,7 @@
         nextStepsPage.style.display = '';
         nextStepsPage.offsetHeight;
         nextStepsPage.classList.add('page-visible');
-        history.replaceState(null, '', '#/next-steps');
+        history.replaceState(null, '', '#/after');
         updateDots('complete');
         trackStatus('sales_page_reached');
       }, 150);
@@ -5205,8 +5205,8 @@
       // Track current page-level location: 'landing', 'diagnostic', 'next-steps'
       function devGetPage() {
         const hash = location.hash;
-        if (hash === '#/next-steps') return 'next-steps';
-        if (hash === '#/diagnostic') return 'diagnostic';
+        if (hash === '#/after') return 'next-steps';
+        if (hash === '#/during') return 'diagnostic';
         return 'landing';
       }
 
@@ -5272,7 +5272,7 @@
 
         // Landing → diagnostic slide 1
         if (page === 'landing') {
-          location.hash = '#/diagnostic';
+          location.hash = '#/during';
           return;
         }
 
@@ -5295,7 +5295,7 @@
           modelContent.classList.add('visible');
           modelBody.innerHTML = '<h2>Dev Placeholder Dynamic Model</h2><p>Skipped to dynamic model view.</p>';
         } else if (currentSlide === 5) {
-          location.hash = '#/next-steps';
+          location.hash = '#/after';
         }
       });
 
@@ -5305,7 +5305,7 @@
 
         // Next-steps → diagnostic slide 5
         if (page === 'next-steps') {
-          location.hash = '#/diagnostic';
+          location.hash = '#/during';
           setTimeout(() => showSlide(5), 50);
           return;
         }
