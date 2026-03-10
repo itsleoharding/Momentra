@@ -4,11 +4,11 @@
   "description": "Backend API proxy for Momentra diagnostic chatbot",
   "main": "src/server.js",
   "scripts": {
-    "start": "node --env-file=.env src/server.js",
+    "start": "node src/server.js",
     "dev": "node --env-file=.env --watch src/server.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.6.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
