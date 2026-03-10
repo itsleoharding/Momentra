@@ -775,6 +775,8 @@
       border: 1px solid rgba(255, 255, 255, 0.06);
       overflow: hidden;
       touch-action: pan-y;
+      display: flex;
+      flex-direction: column;
     }
 
     .mcq-body-wrap::before {
@@ -799,7 +801,8 @@
     }
 
     .mcq-scroll {
-      height: 100%;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
@@ -1964,6 +1967,8 @@
       touch-action: pan-y;
       opacity: 0;
       animation: modelGlowIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
+      display: flex;
+      flex-direction: column;
     }
 
     .model-body-wrap::before {
@@ -1993,9 +1998,9 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
-      height: 100%;
-      max-height: calc(100dvh - 380px);
+      flex: 1;
       min-height: 200px;
+      max-height: calc(100dvh - 380px);
       scrollbar-width: thin;
       scrollbar-color: #1E2226 transparent;
     }
@@ -2182,10 +2187,11 @@
       opacity: 0;
       transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
       background: #0A0B0D;
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     #next-steps-page.page-visible {
       opacity: 1;
@@ -3501,7 +3507,7 @@
        PAGE 3: NEXT STEPS (Sales VSL)
   ════════════════════════════════════════════════════════════════ -->
   <div id="next-steps-page" style="display:none;">
-    <div style="min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;" id="next-steps-inner">
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100%;" id="next-steps-inner">
       <div class="post-diag-content">
 
         <img src="/images/Third_Page.png" alt="This Walkthrough Video Will Explain How To Implement Your Dynamic Model To Hit Six Figures Per Month" class="page-text-image" />
