@@ -355,6 +355,7 @@
       align-items: stretch;
       justify-content: center;
       z-index: 1;
+      touch-action: pan-y;
       opacity: 0;
       transform: scale(0.97);
       filter: blur(4px);
@@ -383,6 +384,7 @@
       flex-direction: column;
       flex: 1;
       min-height: 0;
+      touch-action: pan-y;
     }
 
     /* ── Progress bar ── */
@@ -502,6 +504,7 @@
       flex: 1;
       min-height: 0;
       opacity: 1;
+      touch-action: pan-y;
     }
     .slide.no-animate { transition: none; }
     .slide.slide-exiting {
@@ -771,6 +774,7 @@
       background: rgba(10, 11, 13, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.06);
       overflow: hidden;
+      touch-action: pan-y;
     }
 
     .mcq-body-wrap::before {
@@ -1957,6 +1961,7 @@
       background: rgba(10, 11, 13, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.06);
       overflow: hidden;
+      touch-action: pan-y;
       opacity: 0;
       animation: modelGlowIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
     }
