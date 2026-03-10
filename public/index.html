@@ -24,7 +24,9 @@
       color: #EEEEED;
       font-family: 'Roboto', sans-serif;
       font-weight: 400;
-      overflow-x: hidden;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -137,6 +139,8 @@
       align-items: center;
       justify-content: center;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       z-index: 2;
       background: #0A0B0D;
       background: radial-gradient(ellipse at 50% 0%, #10141A 0%, #0A0B0D 55%);
@@ -794,6 +798,8 @@
     .mcq-scroll {
       height: 100%;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       padding: 28px 28px 48px;
       scrollbar-width: thin;
       scrollbar-color: #1E2226 transparent;
@@ -1981,6 +1987,8 @@
     .model-body {
       padding: 28px 28px 48px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       height: 100%;
       max-height: calc(100dvh - 380px);
       min-height: 200px;
@@ -2095,6 +2103,8 @@
       padding: 32px 0 16px;
       gap: 24px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
       position: relative;
     }
 
