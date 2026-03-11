@@ -14,13 +14,12 @@
       padding: 0;
     }
 
-    html { height: 100%; }
+    html { height: 100%; background: #111214; }
 
     body {
       min-height: 100vh;
       min-height: 100dvh;
-      background: #0A0B0D;
-      background: radial-gradient(ellipse at 50% 0%, #10141A 0%, #0A0B0D 55%);
+      background: #111214;
       color: #EEEEED;
       font-family: 'Roboto', sans-serif;
       font-weight: 400;
@@ -136,9 +135,10 @@
       align-items: center;
       justify-content: center;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       z-index: 2;
-      background: #0A0B0D;
-      background: radial-gradient(ellipse at 50% 0%, #10141A 0%, #0A0B0D 55%);
+      background: #111214;
     }
 
     /* Welcome page exit — added on CTA click */
@@ -253,7 +253,7 @@
       width: 100%;
       max-width: 640px;
       aspect-ratio: 16 / 9;
-      background: #111316;
+      background: #111214;
       border: 2px solid #A5E22C;
       border-radius: 8px;
       display: flex;
@@ -350,7 +350,7 @@
       align-items: stretch;
       justify-content: center;
       z-index: 1;
-      overflow: hidden;
+      overflow: clip;
       opacity: 0;
       transform: scale(0.97);
       filter: blur(4px);
@@ -498,6 +498,9 @@
       flex: 1;
       min-height: 0;
       opacity: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     .slide.no-animate { transition: none; }
     .slide.slide-exiting {
@@ -598,7 +601,7 @@
       padding-right: 34px;
     }
 
-    .field-select option { background: #0F1012; color: #EEEEED; }
+    .field-select option { background: #111214; color: #EEEEED; }
 
 
     /* ── Forward button ── */
@@ -786,7 +789,7 @@
       position: absolute;
       bottom: 0; left: 0; right: 0;
       height: 48px;
-      background: linear-gradient(to top, #0A0B0D, transparent);
+      background: linear-gradient(to top, #111214, transparent);
       pointer-events: none;
       z-index: 1;
       border-radius: 0 0 12px 12px;
@@ -796,6 +799,8 @@
       position: absolute;
       inset: 0;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       padding: 28px 28px 48px;
       scrollbar-width: thin;
       scrollbar-color: #1E2226 transparent;
@@ -1129,7 +1134,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       min-height: 0;
       padding: 8px 0 80px;
       max-width: 640px;
@@ -1207,6 +1212,7 @@
       justify-content: center;
       min-height: 0;
       width: 100%;
+      margin: auto 0;
     }
 
     .iv-card {
@@ -1976,7 +1982,7 @@
       position: absolute;
       bottom: 0; left: 0; right: 0;
       height: 48px;
-      background: linear-gradient(to top, #0A0B0D, transparent);
+      background: linear-gradient(to top, #111214, transparent);
       pointer-events: none;
       z-index: 1;
       border-radius: 0 0 12px 12px;
@@ -1987,6 +1993,8 @@
       inset: 0;
       padding: 28px 28px 48px;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       scrollbar-width: thin;
       scrollbar-color: #1E2226 transparent;
     }
@@ -2170,10 +2178,12 @@
     #next-steps-page {
       opacity: 0;
       transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
-      background: #0A0B0D;
+      background: #111214;
       height: 100vh;
       height: 100dvh;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
     #next-steps-page.page-visible {
       opacity: 1;
@@ -2228,7 +2238,7 @@
       width: 100%;
       max-width: 640px;
       aspect-ratio: 16 / 9;
-      background: #111316;
+      background: #111214;
       border: 2px solid #A5E22C;
       border-radius: 8px;
       display: flex;
@@ -2308,7 +2318,7 @@
       width: 100%;
       max-width: 480px;
       aspect-ratio: 16 / 9;
-      background: #0D0F13;
+      background: #111214;
       border: 1px solid #1E2226;
       border-radius: 14px;
       display: flex;
@@ -2394,7 +2404,7 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%) translateY(80px);
-      background: #111316;
+      background: #111214;
       border: 1px solid #1E2226;
       border-left: 2px solid #A5E22C;
       padding: 12px 20px;
@@ -2595,7 +2605,7 @@
       .iv-content {
         max-width: 100%;
         padding: 8px 0 20px;
-        justify-content: center;
+        justify-content: flex-start;
       }
       .iv-q-text {
         font-size: 17px;
