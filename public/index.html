@@ -887,6 +887,11 @@
       letter-spacing: 0.01em;
     }
 
+    .mcq-info-btn,
+    .mcq-tooltip {
+      display: none !important;
+    }
+
     .mcq-info-btn {
       width: 20px;
       height: 20px;
@@ -1727,20 +1732,23 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+      width: 100%;
       background: transparent;
-      border: none;
-      padding: 8px 16px;
-      color: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      padding: 18px;
+      color: rgba(255, 255, 255, 0.5);
       font-family: 'Roboto', sans-serif;
       font-size: 13px;
       font-weight: 400;
+      border-radius: 8px;
       cursor: pointer;
-      transition: color 0.2s ease;
-      margin-top: 20px;
+      transition: color 0.2s ease, border-color 0.2s ease;
+      margin-top: 12px;
     }
 
     .rv-btn-secondary:hover {
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.7);
+      border-color: rgba(255, 255, 255, 0.7);
     }
 
     .rv-reassurance {
@@ -2533,11 +2541,11 @@
       }
       .landing-subheadline {
         font-size: 14px;
-        margin-bottom: 24px;
+        margin-bottom: 12px;
       }
       .video-placeholder {
         max-width: 100%;
-        margin-bottom: 24px;
+        margin-bottom: 12px;
       }
       .cta-button {
         width: 100%;
@@ -2727,7 +2735,10 @@
       }
       .post-diag-video {
         max-width: 100%;
-        margin-bottom: 24px;
+        margin-bottom: 0;
+      }
+      #next-steps-inner {
+        min-height: 100dvh;
       }
     }
 
@@ -2857,17 +2868,17 @@
             <div class="slide1-row">
               <div>
                 <label class="field-label" for="full-name">Full name <span class="field-required">*</span></label>
-                <input class="field-input" type="text" id="full-name" placeholder="Jane Smith" autocomplete="name">
+                <input class="field-input" type="text" id="full-name" placeholder="John Doe" autocomplete="name">
               </div>
               <div>
                 <label class="field-label" for="instagram">Instagram handle <span class="field-required">*</span></label>
-                <input class="field-input" type="text" id="instagram" placeholder="@yourhandle">
+                <input class="field-input" type="text" id="instagram" placeholder="@johndoe">
               </div>
             </div>
 
             <div>
               <label class="field-label" for="email">Email address <span class="field-required">*</span></label>
-              <input class="field-input" type="email" id="email" placeholder="jane@example.com" autocomplete="email">
+              <input class="field-input" type="email" id="email" placeholder="john@doe.com" autocomplete="email">
             </div>
 
             <div>
@@ -3086,7 +3097,7 @@
               <div class="mcq-header">
                 <div class="mcq-num">1</div>
                 <div class="mcq-title-row">
-                  <div class="mcq-label">Your Niche</div>
+                  <div class="mcq-label">Niche</div>
                   <button class="mcq-info-btn" data-tooltip="q1">?</button>
                 </div>
                 <div class="mcq-tooltip" id="tooltip-q1"><div class="mcq-tooltip-inner">What space are you in? Just the broad category.</div></div>
@@ -3208,7 +3219,7 @@
               <div class="mcq-header">
                 <div class="mcq-num">6</div>
                 <div class="mcq-title-row">
-                  <div class="mcq-label">Sales Team Structure</div>
+                  <div class="mcq-label">Sales Infrastructure</div>
                   <button class="mcq-info-btn" data-tooltip="q6">?</button>
                 </div>
                 <div class="mcq-tooltip" id="tooltip-q6"><div class="mcq-tooltip-inner">Who's involved in closing your deals? Just you, or do you have people handling parts of the sales process?</div></div>
