@@ -14,15 +14,15 @@
       padding: 0;
     }
 
-    html { height: 100%; background: #111214; }
+    html { min-height: 100%; background: #111214; overflow-x: hidden; }
 
     body {
-      min-height: 100vh;
-      min-height: 100dvh;
+      min-height: 100%;
       background: #111214;
       color: #EEEEED;
       font-family: 'Roboto', sans-serif;
       font-weight: 400;
+      overflow-x: hidden;
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -369,6 +369,14 @@
         filter 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s;
     }
 
+    /* Normal-flow mode — applied after entrance transition completes */
+    #widget-wrapper.in-flow {
+      position: relative !important;
+      height: auto !important;
+      min-height: 100dvh;
+      overflow: visible !important;
+    }
+
     .widget-card {
       max-width: 600px;
       width: 100%;
@@ -498,9 +506,6 @@
       flex: 1;
       min-height: 0;
       opacity: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
     }
     .slide.no-animate { transition: none; }
     .slide.slide-exiting {
@@ -764,8 +769,8 @@
 
     .mcq-body-wrap {
       position: relative;
-      flex: 1;
-      min-height: 0;
+      height: calc(100dvh - 160px);
+      flex: none;
       border-radius: 12px;
       background: rgba(10, 11, 13, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.06);
@@ -1130,12 +1135,12 @@
     /* ── Interview card (Slide 3) ── */
 
     .iv-content {
-      flex: none;
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      min-height: 100%;
+      min-height: 0;
       padding: 8px 0 80px;
       max-width: 640px;
       width: 100%;
@@ -1206,10 +1211,11 @@
     }
 
     .iv-card-wrap {
-      flex: none;
+      flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      min-height: 0;
       width: 100%;
     }
 
@@ -1952,8 +1958,8 @@
 
     .model-body-wrap {
       position: relative;
-      flex: 1;
-      min-height: 0;
+      height: calc(100dvh - 200px);
+      flex: none;
       border-radius: 12px;
       background: rgba(10, 11, 13, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.06);
@@ -2177,11 +2183,8 @@
       opacity: 0;
       transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
       background: #111214;
-      height: 100vh;
-      height: 100dvh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
+      min-height: 100vh;
+      min-height: 100dvh;
     }
     #next-steps-page.page-visible {
       opacity: 1;
@@ -2568,6 +2571,7 @@
         border-right: none;
         transform: scale(0.95);
         transform-origin: top center;
+        height: calc(100dvh - 100px);
       }
       .mcq-scroll {
         padding: 24px 28px 48px;
@@ -3878,6 +3882,7 @@
 
         currentSlide = n;
         updateDots(n);
+        window.scrollTo(0, 0);
 
         // Clean up after full transition completes
         setTimeout(function() {
@@ -3896,6 +3901,7 @@
         incoming.style.opacity = '';
         currentSlide = n;
         updateDots(n);
+        window.scrollTo(0, 0);
       }
     }
 
@@ -3920,6 +3926,7 @@
       // After transition completes (0.6s + 0.25s delay + buffer)
       setTimeout(function() {
         landing.style.display = 'none';
+        widgetWrapper.classList.add('in-flow');
         history.replaceState(null, '', '#/during');
 
         // Track page view
@@ -5111,6 +5118,10 @@
       try {
         await apiFetch('/api/session/end', { method: 'POST' });
       } catch (_) {}
+
+      // Return to fixed position for exit transition
+      widgetWrapper.classList.remove('in-flow');
+      window.scrollTo(0, 0);
 
       // Fade out the widget wrapper
       widgetWrapper.style.transition = 'opacity 0.4s cubic-bezier(0.4,0,0.2,1)';
