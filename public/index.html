@@ -2552,6 +2552,7 @@
       }
       .landing-content .video-placeholder {
         margin-bottom: 20px;
+        margin-top: -12px;
       }
       .landing-eyebrow {
         font-size: 10px;
@@ -2771,6 +2772,7 @@
       .post-diag-video {
         max-width: 100%;
         margin-bottom: 20px;
+        margin-top: -12px;
       }
     }
 
@@ -3550,7 +3552,7 @@
         <!-- SALES PAGE VIDEO: Replace SALES_VIDEO_ID with your Loom video ID -->
         <!-- Same process: copy Loom share link, grab the ID from the end of the URL -->
         <div class="post-diag-video" id="cta-video-container">
-          <iframe src="https://fast.wistia.net/embed/iframe/hd3qfzi6lz" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+          <iframe src="https://fast.wistia.net/embed/iframe/nmsqe7suko" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
         </div>
 
         <a class="cta-button" id="discovery-cta" href="https://calendly.com/carbon-consulting/new-meeting" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">IMPLEMENT YOUR DYNAMIC MODEL</a>
@@ -5255,141 +5257,6 @@
     //     checkVslMilestone('vsl_1', Math.round(pct * 100));
     //   });
     // }});
-
-    // ══════════════════════════════════════════════════════════════════
-    // DEV TOOLBAR — REMOVE BEFORE PRODUCTION
-    // ══════════════════════════════════════════════════════════════════
-    (function() {
-      // Track current page-level location: 'landing', 'diagnostic', 'next-steps'
-      function devGetPage() {
-        const hash = location.hash;
-        if (hash === '#/after') return 'next-steps';
-        if (hash === '#/during') return 'diagnostic';
-        return 'landing';
-      }
-
-      const devBar = document.createElement('div');
-      devBar.id = 'dev-toolbar';
-      devBar.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99999;display:flex;align-items:center;gap:6px;';
-
-      const btnStyle = 'background:#8FBF6B;color:#111;border:none;padding:10px 18px;border-radius:6px;font:600 14px/1 sans-serif;cursor:pointer;opacity:0.85;box-shadow:0 2px 8px rgba(0,0,0,.3);min-height:44px;';
-
-      const backBtn = document.createElement('button');
-      backBtn.textContent = '\u2190 Back';
-      backBtn.style.cssText = btnStyle;
-      backBtn.addEventListener('mouseenter', () => backBtn.style.opacity = '1');
-      backBtn.addEventListener('mouseleave', () => backBtn.style.opacity = '0.85');
-
-      const stateLabel = document.createElement('span');
-      stateLabel.style.cssText = 'color:#8FBF6B;font:600 11px/28px monospace;opacity:0.7;min-width:90px;text-align:center;';
-
-      const skipBtn = document.createElement('button');
-      skipBtn.textContent = 'Skip \u2192';
-      skipBtn.style.cssText = btnStyle;
-      skipBtn.addEventListener('mouseenter', () => skipBtn.style.opacity = '1');
-      skipBtn.addEventListener('mouseleave', () => skipBtn.style.opacity = '0.85');
-
-      function updateStateLabel() {
-        const page = devGetPage();
-        if (page === 'landing') stateLabel.textContent = 'BEFORE';
-        else if (page === 'next-steps') stateLabel.textContent = 'AFTER';
-        else stateLabel.textContent = 'DURING';
-      }
-
-      // Update label on navigation
-      window.addEventListener('hashchange', () => setTimeout(updateStateLabel, 50));
-      const origShowSlide = showSlide;
-      showSlide = function(n) { origShowSlide(n); updateStateLabel(); };
-      setTimeout(updateStateLabel, 100);
-
-      async function devEnsureSession() {
-        if (!sessionId) {
-          try {
-            const data = await apiFetch('/api/session/start', {
-              method: 'POST',
-              body: { contact: { fullName: 'Dev User', email: 'dev@test.com', instagramHandle: '@dev' }, referralSource: 'dev-skip' }
-            });
-            sessionId = data.sessionId;
-            await apiFetch('/api/intake', { method: 'POST', body: { answers: {
-              niche: { category: 'Wealth', subcategory: 'Agency' },
-              fulfillment_model: 'Done-with-you',
-              price_point: '$1,000\u2013$5,000',
-              funnel_type: ['VSL Funnel'],
-              sales_team: ['Setter', 'Closer'],
-              paid_advertising: 'Yes'
-            } } });
-          } catch (e) {
-            console.warn('Dev skip: session setup failed', e);
-          }
-        }
-      }
-
-      // ── SKIP FORWARD ──
-      skipBtn.addEventListener('click', async () => {
-        const page = devGetPage();
-
-        // Landing → diagnostic slide 1
-        if (page === 'landing') {
-          location.hash = '#/during';
-          return;
-        }
-
-        // Next-steps page has nowhere forward to go
-        if (page === 'next-steps') return;
-
-        // Inside diagnostic widget
-        if (currentSlide >= 1) await devEnsureSession();
-
-        if (currentSlide === 1) {
-          showSlide(2);
-        } else if (currentSlide === 2) {
-          showSlide(3);
-          initChat();
-        } else if (currentSlide === 3) {
-          showSlide(4);
-        } else if (currentSlide === 4) {
-          showSlide(5);
-          modelLoading.style.display = 'none';
-          modelContent.classList.add('visible');
-          modelBody.innerHTML = '<h2>Dev Placeholder Dynamic Model</h2><p>Skipped to dynamic model view.</p>';
-        } else if (currentSlide === 5) {
-          location.hash = '#/after';
-        }
-      });
-
-      // ── GO BACK ──
-      backBtn.addEventListener('click', () => {
-        const page = devGetPage();
-
-        // Next-steps → diagnostic slide 5
-        if (page === 'next-steps') {
-          location.hash = '#/during';
-          setTimeout(() => showSlide(5), 50);
-          return;
-        }
-
-        // Landing has nowhere back to go
-        if (page === 'landing') return;
-
-        // Inside diagnostic widget
-        if (currentSlide === 1) {
-          location.hash = '#/before';
-        } else if (currentSlide === 2) {
-          showSlide(1);
-        } else if (currentSlide === 3) {
-          showSlide(2);
-        } else if (currentSlide === 4) {
-          showSlide(3);
-        } else if (currentSlide === 5) {
-          showSlide(4);
-        }
-      });
-
-      devBar.appendChild(backBtn);
-      devBar.appendChild(stateLabel);
-      devBar.appendChild(skipBtn);
-      document.body.appendChild(devBar);
-    })();
 
   </script>
 </body>
