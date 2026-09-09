@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>Maintenance in Progress</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #000;
+  }
+  body {
+    display: block;
+    overflow: hidden;
+  }
+  picture, img {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    object-fit: cover;
+    object-position: center;
+  }
+</style>
+</head>
+<body>
+  <picture>
+    <!-- Portrait viewports (phones held upright, tablets in portrait) get the 1080x1920 image. -->
+    <source media="(orientation: portrait)" srcset="mobile.png" width="1080" height="1920">
+    <!-- Everything else (desktop, laptops, landscape tablets) gets the 1920x1080 image. -->
+    <img src="desktop.png" width="1920" height="1080" alt="Maintenance in progress">
+  </picture>
+</body>
+</html>
